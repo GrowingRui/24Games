@@ -1,7 +1,18 @@
-# 24Games
-Welcome to the 24 Game, an engaging online puzzle challenge that tests your mathematical skills and creativity! 
-The objective is simple yet thrilling: use four numbers to create an expression that equals 24, employing basic arithmetic operations—addition, subtraction, multiplication, and division.
+# Puzzle Games Collection 🎮🧩
+
+Welcome to this collection of engaging online puzzle games, designed to challenge your **mathematical skills, logic, and creativity**!  
+
+The first game in this collection is **24 Game**, a thrilling challenge where you use four numbers to create an expression that equals 24, employing basic arithmetic operations—addition, subtraction, multiplication, and division.
+
+This repository will gradually expand to include other **math puzzles, logic games, and brain teasers**. Stay tuned for more exciting games like Sudoku, KenKen, and other number or logic challenges!
+
+## Current Games
 
 To access the game 24 point please click here -> https://growingrui.github.io/brainstorming/24-point-game
+
 To access the game sudoku please click here -> https://growingrui.github.io/brainstorming/sudoku-game
+
+### About
+
+This project is intended for anyone who enjoys **brain-training, fun math challenges, and logic puzzles**. New games will be added regularly, making this repository a growing hub for puzzle enthusiasts.
 
