@@ -5,654 +5,439 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>24 Game</title>
     <style>
-        * {
-            box-sizing: border-box;
+        :root {
+            --primary-bg: linear-gradient(135deg, #4e73df, #1cc88a);
+            --glass-bg: rgba(255, 255, 255, 0.15);
+            --num-btn: #ffffff;
+            --op-btn: rgba(255, 255, 255, 0.8);
+            --tool-bg: #ffc107;
+            --success: #28a745;
+            --danger: #dc3545;
         }
+
+        * { box-sizing: border-box; transition: all 0.2s ease; }
 
         body {
             margin: 0;
             font-family: Arial, sans-serif;
             text-align: center;
-            background: linear-gradient(135deg, #4e73df, #1cc88a);
+            background: var(--primary-bg);
             color: white;
             padding: 20px;
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         h1 {
             font-size: clamp(32px, 8vw, 40px);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
         }
 
-        .start-screen {
+        .main-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: clamp(20px, 5vw, 40px);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 500px;
+            position: relative;
+        }
+
+        button { border: none; cursor: pointer; font-weight: bold; border-radius: 10px; }
+        button:active { transform: scale(0.95); }
+        button:disabled { opacity: 0.3; cursor: not-allowed; filter: grayscale(1); }
+
+        .start-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 60vh; }
+        .start-screen button { font-size: 22px; margin: 15px; padding: 15px 40px; width: 280px; color: white; }
+        .btn-start { background-color: var(--success); }
+        .view-score-btn { background-color: #007bff; }
+
+        .game-container { display: none; }
+        .game-container.active { display: block; }
+
+        .timer-score { display: flex; justify-content: center; gap: 40px; margin-bottom: 20px; font-size: 22px; font-weight: bold; }
+
+        .numbers { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-bottom: 20px; }
+        .numbers button { font-size: 28px; width: 80px; height: 60px; background: var(--num-btn); color: #333; }
+
+        .operators { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        .operators button { font-size: 22px; width: 55px; height: 45px; background: var(--op-btn); color: #333; }
+
+        /* 工具按钮样式 (Undo, Redo, Delete) - 数独风格 */
+        .tools-options {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+        .tool-btn {
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
-            min-height: 80vh;
-        }
-
-        .start-screen button {
-            font-size: clamp(18px, 5vw, 24px);
-            margin: 20px;
-            padding: clamp(12px, 3vw, 15px) clamp(30px, 8vw, 40px);
-            border-radius: 10px;
-            border: none;
-            cursor: pointer;
-            background-color: #28a745;
-            color: white;
-            transition: background-color 0.3s;
-            width: 100%;
-            max-width: 400px;
-        }
-
-        .start-screen button:hover {
-            background-color: #218838;
-        }
-
-        .start-screen .view-score-btn {
-            background-color: #007bff;
-            margin-top: 40px;
-        }
-
-        .start-screen .view-score-btn:hover {
-            background-color: #0056b3;
-        }
-
-        .game-container {
-            display: none;
-            margin-top: 20px;
-        }
-
-        .game-container.active {
-            display: block;
-        }
-
-        .timer-score {
-            display: flex;
-            flex-direction: row;
             justify-content: center;
-            gap: clamp(20px, 5vw, 50px);
-            margin-bottom: 20px;
-            font-size: clamp(16px, 4vw, 20px);
-            flex-wrap: wrap;
+            padding: 5px;
+            background-color: var(--tool-bg);
+            color: #333;
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-
-        .timer {
-            font-weight: bold;
-            font-size: clamp(18px, 5vw, 24px);
-        }
-
-        .score {
-            font-weight: bold;
-            font-size: clamp(18px, 5vw, 24px);
-        }
-
-        .numbers {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: clamp(8px, 2vw, 10px);
-        }
-
-        .numbers button {
-            font-size: clamp(20px, 6vw, 28px);
-            margin: clamp(5px, 1vw, 10px);
-            padding: clamp(12px, 3vw, 15px) clamp(15px, 4vw, 20px);
-            border-radius: 10px;
-            border: none;
-            cursor: pointer;
-            flex: 1;
-            min-width: clamp(60px, 20vw, 100px);
-            max-width: 100px;
-        }
-
-        .operators {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: clamp(5px, 1vw, 5px);
-            margin: 15px 0;
-        }
-
-        .operators button {
-            font-size: clamp(16px, 4vw, 22px);
-            margin: clamp(3px, 1vw, 5px);
-            padding: clamp(8px, 2vw, 10px) clamp(10px, 3vw, 15px);
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            flex: 1;
-            min-width: clamp(50px, 15vw, 80px);
-            max-width: 80px;
-        }
-
-        .controls {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: clamp(5px, 1vw, 10px);
-            margin: 15px 0;
-        }
-
-        .controls button {
-            margin: clamp(5px, 1vw, 10px);
-            padding: clamp(6px, 2vw, 8px) clamp(10px, 3vw, 15px);
-            font-size: clamp(14px, 3vw, 16px);
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            flex: 1;
-            min-width: clamp(60px, 18vw, 100px);
-            max-width: 150px;
-        }
-
-        .submit-button {
-            background-color: #28a745;
-            color: white;
-            font-size: 18px;
-            padding: 10px 20px;
-            margin: 10px;
-        }
-
-        .submit-button:hover {
-            background-color: #218838;
-        }
-
-        .exit-button {
-            background-color: #dc3545;
-            color: white;
-            font-size: 18px;
-            padding: 10px 20px;
-            margin: 10px;
-        }
-
-        .exit-button:hover {
-            background-color: #c82333;
-        }
-
-        .backspace-button {
-            background-color: #ffc107;
-            color: black;
-            font-size: 18px;
-            padding: 10px 20px;
-            margin: 10px;
-            white-space: nowrap;
-        }
-
-        .backspace-button:hover {
-            background-color: #e0a800;
-        }
+        .tool-icon { font-size: 20px; margin-bottom: 2px; }
+        .tool-name { font-size: 10px; font-weight: bold; text-transform: uppercase; }
 
         .expression-box {
-            margin-top: 20px;
-            font-size: 24px;
-            min-height: 40px;
-            word-wrap: break-word;
-            padding: 10px;
-        }
-
-        .result {
-            margin-top: 20px;
-            font-size: 22px;
-            font-weight: bold;
-        }
-
-        .feedback {
-            margin-top: 15px;
-            font-size: 20px;
-            min-height: 30px;
-            font-weight: bold;
-        }
-
-        .feedback.correct {
-            color: #00ff00;
-        }
-
-        .feedback.incorrect {
-            color: #ffcccc;
-        }
-
-        .hint {
-            position: fixed;
-            right: clamp(15px, 4vw, 30px);
-            top: clamp(15px, 4vw, 30px);
-            font-size: clamp(24px, 8vw, 30px);
-            cursor: pointer;
-            z-index: 100;
-        }
-
-        .footer {
-            position: fixed;
-            bottom: 10px;
-            left: 10px;
-            font-size: 14px;
-            opacity: 0.9;
-        }
-
-        .score-modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
+            min-height: 60px;
+            font-size: 32px;
+            margin: 10px 0;
+            display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
-        }
-
-        .score-modal.active {
-            display: flex;
-        }
-
-        .score-content {
-            background-color: #1cc88a;
-            padding: 40px;
-            border-radius: 15px;
-            text-align: center;
-            font-size: 32px;
-            font-weight: bold;
-            max-width: 90vw;
-        }
-
-        .score-content button {
-            margin-top: 30px;
-            padding: 10px 30px;
-            font-size: 18px;
-            background-color: #28a745;
+            word-break: break-all;
             color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
         }
 
-        .score-content button:hover {
-            background-color: #218838;
+        .controls { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .controls button { padding: 10px; font-size: 16px; color: white; background: #6c757d; }
+        .submit-button { grid-column: span 2; background: var(--success) !important; font-size: 20px !important; margin-top: 5px; }
+        .exit-button { background: var(--danger) !important; }
+
+        .hint { position: absolute; top: 15px; right: 15px; font-size: 24px; cursor: pointer; }
+
+        .score-modal {
+            display: none; position: fixed; z-index: 1000;
+            left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            align-items: center; justify-content: center;
         }
+        .score-modal.active { display: flex; }
+        .score-content {
+            background-color: #1cc88a; padding: 40px; border-radius: 15px;
+            text-align: center; font-size: 32px; font-weight: bold;
+        }
+        .score-content button { margin-top: 30px; padding: 10px 30px; background-color: white; color: #1cc88a; }
+
+        .feedback { margin-top: 15px; font-size: 18px; height: 24px; font-weight: bold; }
+        .feedback.correct { color: #00ff00; }
+        .footer { margin-top: 20px; font-size: 14px; opacity: 0.9; }
 
         @media (max-width: 480px) {
-            body {
-                padding: 15px;
-            }
-
-            .timer-score {
-                flex-direction: column;
-                gap: 10px;
-            }
-
-            .controls {
-                gap: 8px;
-            }
-
-            .operators {
-                gap: 4px;
-            }
-
-            .submit-button {
-                font-size: 16px;
-                padding: 8px 15px;
-                margin: 8px;
-            }
-
-            .exit-button {
-                font-size: 16px;
-                padding: 8px 15px;
-                margin: 8px;
-            }
-
-            .backspace-button {
-                font-size: 14px;
-                padding: 8px 10px;
-                margin: 8px;
-            }
-
-            .expression-box {
-                font-size: 20px;
-                min-height: 35px;
-            }
-
-            .feedback {
-                font-size: 16px;
-            }
-
-            .result {
-                font-size: 18px;
-            }
-
-            .footer {
-                font-size: 12px;
-            }
+            .numbers button { width: 65px; height: 50px; font-size: 22px; }
+            .operators button { width: 45px; height: 42px; }
+            .tool-btn { width: 50px; height: 50px; }
         }
     </style>
 </head>
-
 <body>
 
-<div class="start-screen" id="startScreen">
     <h1>24 Game</h1>
-    <button onclick="startGame()">Start Game</button>
-    <button class="view-score-btn" onclick="viewScore()">View My Score</button>
-</div>
 
-<div class="score-modal" id="scoreModal">
-    <div class="score-content">
-        <div>Your Score: <span id="finalScore">0</span></div>
-        <button onclick="closeScoreModal()">Close</button>
+    <div class="main-card">
+        <div class="start-screen" id="startScreen">
+            <button class="btn-start" onclick="startGame()">Play Game</button>
+            <button class="view-score-btn" onclick="viewScore()">View Score</button>
+        </div>
+
+        <div class="game-container" id="gameContainer">
+            <div class="hint" onclick="showHint()">🔑</div>
+
+            <div class="timer-score">
+                <div>Time: <span id="timer">300</span>s</div>
+                <div>Score: <span id="score">0</span></div>
+            </div>
+
+            <div class="numbers" id="numbers"></div>
+
+            <div class="operators">
+                <button onclick="addOperator('+')">+</button>
+                <button onclick="addOperator('-')">-</button>
+                <button onclick="addOperator('*')">×</button>
+                <button onclick="addOperator('÷')">÷</button>
+                <button onclick="addOperator('(')">(</button>
+                <button onclick="addOperator(')')">)</button>
+            </div>
+
+            <div class="tools-options">
+                <button class="tool-btn" onclick="undo()" id="btnUndo">
+                    <span class="tool-icon">&#8617;</span>
+                    <span class="tool-name">Undo</span>
+                </button>
+                <button class="tool-btn" onclick="redo()" id="btnRedo">
+                    <span class="tool-icon">&#8618;</span>
+                    <span class="tool-name">Redo</span>
+                </button>
+                <button class="tool-btn" onclick="backspace()" id="btnDelete">
+                    <span class="tool-icon">&#128465;</span>
+                    <span class="tool-name">Delete</span>
+                </button>
+            </div>
+
+            <div class="expression-box" id="expression"></div>
+
+            <div class="controls">
+                <button onclick="resetExpression()">Reset All</button>
+                <button onclick="newGameWithTimer()">New Game</button>
+                <button class="exit-button" onclick="exitGame()">Exit</button>
+                <button class="submit-button" onclick="checkAnswer()">Submit Answer</button>
+            </div>
+
+            <div class="feedback" id="feedback"></div>
+        </div>
     </div>
-</div>
 
-<div class="game-container" id="gameContainer">
-
-    <div class="hint" onclick="showHint()">🔑</div>
-
-    <div class="timer-score">
-        <div class="timer">Time: <span id="timer">180</span>s</div>
-        <div class="score">Score: <span id="score">0</span></div>
+    <div class="score-modal" id="scoreModal">
+        <div class="score-content">
+            <div>Your Score: <span id="finalScore">0</span></div>
+            <button onclick="closeScoreModal()">Close</button>
+        </div>
     </div>
 
-    <div class="numbers" id="numbers"></div>
-
-    <div class="operators">
-        <button onclick="addOperator('+')">+</button>
-        <button onclick="addOperator('-')">-</button>
-        <button onclick="addOperator('*')">×</button>
-        <button onclick="addOperator('÷')">÷</button>
-        <button onclick="addOperator('(')">(</button>
-        <button onclick="addOperator(')')">)</button>
+    <div class="footer">
+        Author: XIA RUI DONG | Contact: xiarui091@gmail.com
     </div>
 
-    <div class="expression-box" id="expression"></div>
+    <script>
+        let numbers = [];
+        let expression = "";
+        let score = 0;
+        let timeLeft = 300; 
+        let timerInterval = null;
+        let gameActive = false;
 
-    <div class="controls">
-        <button onclick="resetExpression()">Reset</button>
-        <button onclick="newGameWithTimer()">New Game</button>
-        <button class="backspace-button" onclick="backspace()">⌫</button>
-        <button class="submit-button" onclick="checkAnswer()">Submit Answer</button>
-        <button class="exit-button" onclick="exitGame()">Exit</button>
-    </div>
+        let history = [""]; 
+        let historyStep = 0;
 
-    <div class="result" id="result"></div>
-    <div class="feedback" id="feedback"></div>
-
-</div>
-
-<div class="footer">
-    Author: XIA RUI DONG | Contact: xiarui091@gmail.com
-</div>
-
-<script>
-    let numbers = [];
-    let expression = "";
-    let score = 0;
-    let timeLeft = 180;
-    let timerInterval = null;
-    let gameActive = false;
-
-    function startGame() {
-        document.getElementById("startScreen").style.display = "none";
-        document.getElementById("gameContainer").classList.add("active");
-        score = 0;
-        timeLeft = 180;
-        gameActive = true;
-        document.getElementById("score").innerText = score;
-        newGame();
-        startTimer();
-    }
-
-    function exitGame() {
-        clearInterval(timerInterval);
-        gameActive = false;
-        document.getElementById("gameContainer").classList.remove("active");
-        document.getElementById("startScreen").style.display = "flex";
-    }
-
-    function viewScore() {
-        document.getElementById("finalScore").innerText = score;
-        document.getElementById("scoreModal").classList.add("active");
-    }
-
-    function closeScoreModal() {
-        document.getElementById("scoreModal").classList.remove("active");
-    }
-
-    function newGame() {
-        expression = "";
-        document.getElementById("expression").innerText = "";
-        document.getElementById("feedback").innerText = "";
-        numbers = generateSolvableNumbers();
-        renderNumbers();
-    }
-
-    function newGameWithTimer() {
-        clearInterval(timerInterval);
-        timeLeft = 180;
-        document.getElementById("timer").innerText = timeLeft;
-        startTimer();
-        newGame();
-    }
-
-    function generateSolvableNumbers() {
-        while (true) {
-            let arr = [];
-            for (let i = 0; i < 4; i++) {
-                arr.push(Math.floor(Math.random() * 9) + 1);
+        function saveState() {
+            if (expression === history[historyStep]) return;
+            if (historyStep < history.length - 1) {
+                history = history.slice(0, historyStep + 1);
             }
-            if (solve24(arr)) return arr;
+            history.push(expression);
+            historyStep++;
+            updateToolButtons();
         }
-    }
 
-    function renderNumbers() {
-        const container = document.getElementById("numbers");
-        container.innerHTML = "";
-        numbers.forEach(num => {
-            let btn = document.createElement("button");
-            btn.innerText = num;
-            btn.onclick = () => append(num);
-            container.appendChild(btn);
-        });
-    }
-
-    function append(value) {
-        if (!gameActive) return;
-        expression += value;
-        document.getElementById("expression").innerText = expression;
-    }
-
-    function addOperator(op) {
-        if (!gameActive) return;
-        if (expression === "" && "+-*÷".includes(op)) return;
-        let last = expression.slice(-1);
-        if ("+-*÷".includes(last) && op !== '(' && op !== ')') return;
-        expression += op;
-        document.getElementById("expression").innerText = expression;
-    }
-
-    function backspace() {
-        expression = expression.slice(0, -1);
-        document.getElementById("expression").innerText = expression;
-    }
-
-    function resetExpression() {
-        expression = "";
-        document.getElementById("expression").innerText = "";
-        document.getElementById("feedback").innerText = "";
-    }
-
-    function calculateExpression(exp) {
-        exp = exp.replace(/÷/g, '/');
-
-        if (exp.includes("(")) {
-            try {
-                return eval(exp);
-            } catch {
-                return null;
+        function undo() {
+            if (historyStep > 0) {
+                historyStep--;
+                expression = history[historyStep];
+                document.getElementById("expression").innerText = expression;
+                updateToolButtons();
             }
         }
 
-        let tokens = [];
-        let number = "";
-
-        for (let char of exp) {
-            if ("0123456789.".includes(char)) {
-                number += char;
-            } else if ("+-*/".includes(char)) {
-                if (number === "") return null;
-                tokens.push(parseFloat(number));
-                tokens.push(char);
-                number = "";
-            } else {
-                return null;
+        function redo() {
+            if (historyStep < history.length - 1) {
+                historyStep++;
+                expression = history[historyStep];
+                document.getElementById("expression").innerText = expression;
+                updateToolButtons();
             }
         }
 
-        if (number !== "") {
-            tokens.push(parseFloat(number));
+        function updateToolButtons() {
+            document.getElementById("btnUndo").disabled = (historyStep === 0);
+            document.getElementById("btnRedo").disabled = (historyStep === history.length - 1);
+            document.getElementById("btnDelete").disabled = (expression.length === 0);
         }
 
-        for (let i = 0; i < tokens.length; i++) {
-            if (tokens[i] === "*" || tokens[i] === "/") {
-                let a = tokens[i - 1];
-                let b = tokens[i + 1];
-                let result;
-
-                if (tokens[i] === "*") {
-                    result = a * b;
-                } else {
-                    if (b === 0) return null;
-                    result = a / b;
-                }
-
-                tokens.splice(i - 1, 3, result);
-                i -= 1;
-            }
-        }
-
-        let result = tokens[0];
-        for (let i = 1; i < tokens.length; i += 2) {
-            if (tokens[i] === "+") {
-                result += tokens[i + 1];
-            } else if (tokens[i] === "-") {
-                result -= tokens[i + 1];
-            }
-        }
-
-        return result;
-    }
-
-    function checkAnswer() {
-        if (!gameActive) return;
-        let result = calculateExpression(expression);
-
-        if (result === null) {
-            document.getElementById("feedback").innerText = "Invalid Expression";
-            document.getElementById("feedback").className = "feedback incorrect";
-            return;
-        }
-
-        result = Math.round(result * 100) / 100;
-
-        let feedbackEl = document.getElementById("feedback");
-        
-        if (result === 24) {
-            score += 100;
+        function startGame() {
+            document.getElementById("startScreen").style.display = "none";
+            document.getElementById("gameContainer").classList.add("active");
+            score = 0;
+            timeLeft = 300;
+            gameActive = true;
             document.getElementById("score").innerText = score;
-            feedbackEl.innerText = "Excellent! 🎉";
-            feedbackEl.className = "feedback correct";
-            clearInterval(timerInterval);
-            setTimeout(() => {
-                timeLeft = 180;
-                document.getElementById("timer").innerText = timeLeft;
-                startTimer();
-                newGame();
-            }, 1500);
-        } else {
-            feedbackEl.innerText = "Sorry, that's incorrect. Try again!";
-            feedbackEl.className = "feedback incorrect";
-        }
-    }
-
-    function startTimer() {
-        timerInterval = setInterval(() => {
-            timeLeft--;
             document.getElementById("timer").innerText = timeLeft;
-
-            if (timeLeft <= 0) {
-                clearInterval(timerInterval);
-                gameActive = false;
-                let solution = solve24(numbers);
-                document.getElementById("feedback").innerText = "Time's up! Game Over. Final Score: " + score + "\nCorrect Answer: " + solution;
-                document.getElementById("feedback").className = "feedback";
-            }
-        }, 1000);
-    }
-
-    function solve24(nums, exprs = null) {
-        if (!exprs) {
-            exprs = nums.map(num => num.toString());
+            newGame();
+            startTimer();
         }
 
-        if (nums.length === 1) {
-            if (Math.abs(nums[0] - 24) < 0.01) {
-                return exprs[0];
+        function exitGame() {
+            clearInterval(timerInterval);
+            gameActive = false;
+            document.getElementById("gameContainer").classList.remove("active");
+            document.getElementById("startScreen").style.display = "flex";
+        }
+
+        function viewScore() {
+            document.getElementById("finalScore").innerText = score;
+            document.getElementById("scoreModal").classList.add("active");
+        }
+
+        function closeScoreModal() {
+            document.getElementById("scoreModal").classList.remove("active");
+        }
+
+        function newGame() {
+            expression = "";
+            history = [""];
+            historyStep = 0;
+            updateToolButtons();
+            document.getElementById("expression").innerText = "";
+            document.getElementById("feedback").innerText = "";
+            numbers = generateSolvableNumbers();
+            renderNumbers();
+        }
+
+        function newGameWithTimer() {
+            clearInterval(timerInterval);
+            timeLeft = 300;
+            document.getElementById("timer").innerText = timeLeft;
+            startTimer();
+            newGame();
+        }
+
+        function generateSolvableNumbers() {
+            while (true) {
+                let arr = [];
+                for (let i = 0; i < 4; i++) arr.push(Math.floor(Math.random() * 9) + 1);
+                // 这里调用 solve24 时，它已经只会查找整数解了
+                if (solve24(arr)) return arr;
+            }
+        }
+
+        function renderNumbers() {
+            const container = document.getElementById("numbers");
+            container.innerHTML = "";
+            numbers.forEach(num => {
+                let btn = document.createElement("button");
+                btn.innerText = num;
+                btn.onclick = () => append(num);
+                container.appendChild(btn);
+            });
+        }
+
+        function append(value) {
+            if (!gameActive) return;
+            expression += value;
+            document.getElementById("expression").innerText = expression;
+            saveState();
+        }
+
+        function addOperator(op) {
+            if (!gameActive) return;
+            if (expression === "" && "+-*÷".includes(op)) return;
+            let last = expression.slice(-1);
+            if ("+-*÷".includes(last) && op !== '(' && op !== ')') return;
+            expression += op;
+            document.getElementById("expression").innerText = expression;
+            saveState();
+        }
+
+        function backspace() {
+            if (expression.length > 0) {
+                expression = expression.slice(0, -1);
+                document.getElementById("expression").innerText = expression;
+                saveState();
+            }
+        }
+
+        function resetExpression() {
+            if (expression === "") return;
+            expression = "";
+            document.getElementById("expression").innerText = "";
+            document.getElementById("feedback").innerText = "";
+            saveState();
+        }
+
+        function calculateExpression(exp) {
+            exp = exp.replace(/÷/g, '/');
+            try { return eval(exp); } catch { return null; }
+        }
+
+        function checkAnswer() {
+            if (!gameActive) return;
+            let result = calculateExpression(expression);
+            if (result === null) {
+                document.getElementById("feedback").innerText = "Invalid Expression";
+                document.getElementById("feedback").className = "feedback incorrect";
+                return;
+            }
+            result = Math.round(result * 100) / 100;
+            let feedbackEl = document.getElementById("feedback");
+            if (result === 24) {
+                score += 100;
+                document.getElementById("score").innerText = score;
+                feedbackEl.innerText = "Excellent! 🎉";
+                feedbackEl.className = "feedback correct";
+                clearInterval(timerInterval);
+                setTimeout(() => {
+                    timeLeft = 300;
+                    document.getElementById("timer").innerText = timeLeft;
+                    startTimer();
+                    newGame();
+                }, 1500);
+            } else {
+                feedbackEl.innerText = "Incorrect. Try again!";
+                feedbackEl.className = "feedback incorrect";
+            }
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById("timer").innerText = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    gameActive = false;
+                    let solution = solve24(numbers);
+                    document.getElementById("feedback").innerText = "Game Over! Solution: " + solution;
+                    document.getElementById("feedback").className = "feedback";
+                }
+            }, 1000);
+        }
+
+        // 修改后的算法：只寻找【纯整数步骤】的解法
+        function solve24(nums, exprs = null) {
+            if (!exprs) exprs = nums.map(num => num.toString());
+            if (nums.length === 1) {
+                if (Math.abs(nums[0] - 24) < 0.01) return exprs[0];
+                return null;
+            }
+            for (let i = 0; i < nums.length; i++) {
+                for (let j = 0; j < nums.length; j++) {
+                    if (i === j) continue;
+                    let newNums = [], newExprs = [];
+                    for (let k = 0; k < nums.length; k++) {
+                        if (k !== i && k !== j) {
+                            newNums.push(nums[k]);
+                            newExprs.push(exprs[k]);
+                        }
+                    }
+                    let a = nums[i], b = nums[j];
+                    let exprA = exprs[i], exprB = exprs[j];
+                    let ops = [
+                        { v: a+b, s: `(${exprA}+${exprB})` },
+                        { v: a-b, s: `(${exprA}-${exprB})` },
+                        { v: a*b, s: `(${exprA}*${exprB})` }
+                    ];
+                    
+                    // 核心逻辑修改：增加 a % b === 0，确保除法后仍然是整数
+                    if (b !== 0 && a % b === 0) {
+                        ops.push({ v: a/b, s: `(${exprA}/${exprB})` });
+                    }
+
+                    for (let op of ops) {
+                        let res = solve24([...newNums, op.v], [...newExprs, op.s]);
+                        if (res) return res;
+                    }
+                }
             }
             return null;
         }
 
-        for (let i = 0; i < nums.length; i++) {
-            for (let j = 0; j < nums.length; j++) {
-                if (i === j) continue;
-
-                let newNums = [];
-                let newExprs = [];
-
-                for (let k = 0; k < nums.length; k++) {
-                    if (k !== i && k !== j) {
-                        newNums.push(nums[k]);
-                        newExprs.push(exprs[k]);
-                    }
-                }
-
-                let a = nums[i];
-                let b = nums[j];
-                let exprA = exprs[i];
-                let exprB = exprs[j];
-
-                let operations = [
-                    { val: a + b, str: `(${exprA}+${exprB})` },
-                    { val: a - b, str: `(${exprA}-${exprB})` },
-                    { val: a * b, str: `(${exprA}*${exprB})` }
-                ];
-
-                if (b !== 0 && a % b === 0) {
-                    operations.push({ val: a / b, str: `(${exprA}/${exprB})` });
-                }
-
-                for (let op of operations) {
-                    let result = solve24(
-                        [...newNums, op.val],
-                        [...newExprs, op.str]
-                    );
-
-                    if (result) return result;
-                }
-            }
+        function showHint() {
+            if (!gameActive) return;
+            let sol = solve24(numbers);
+            alert(sol ? "Solution (Integer only):\n" + sol : "No integer solution found");
         }
-
-        return null;
-    }
-
-    function showHint() {
-        if (!gameActive) return;
-        let solution = solve24(numbers);
-        if (solution) {
-            alert("Solution:\n" + solution);
-        } else {
-            alert("No solution found (this should not happen)");
-        }
-    }
-</script>
-
+    </script>
 </body>
 </html>
