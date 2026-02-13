@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sudoku Game</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    text-align: center;
+    background: linear-gradient(135deg, #4e73df, #1cc88a);
+    color: white;
+    padding: 20px;
+    min-height: 100vh;
+  }
+  h1 { font-size: clamp(32px, 8vw, 40px); text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+
+  .start-screen, .game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 80vh;
+  }
+
+  /* 通用控制按钮 (Start, Check, New Game, Exit) */
+  .control-btn {
+    font-size: clamp(16px, 4vw, 20px);
+    padding: 12px 24px;
+    margin: 10px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    background-color: #28a745;
+    color: white;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+    font-weight: bold;
+  }
+  .control-btn:hover { 
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+    filter: brightness(1.1);
+  }
+  .control-btn:active { transform: translateY(0); }
+  .control-btn:disabled { background-color: #ccc; cursor: not-allowed; transform: none; }
+
+  .sudoku-container { 
+    display: flex; 
+    gap: 30px; 
+    align-items: flex-start; 
+    margin-top: 20px; 
+    background: rgba(255, 255, 255, 0.1);
+    padding: 20px;
+    border-radius: 15px;
+    backdrop-filter: blur(5px);
+  }
+
+  /* 数独网格样式 */
+  .sudoku-grid {
+    display: grid;
+    grid-template-columns: repeat(9, 44px);
+    grid-template-rows: repeat(9, 44px);
+    gap: 0; 
+    border: 4px solid #000;
+    background-color: white;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  }
+
+  .cell {
+    width: 44px;
+    height: 44px;
+    font-size: 24px;
+    text-align: center;
+    line-height: 44px;
+    cursor: pointer;
+    user-select: none;
+    color: #333;
+    background-color: #e6e6e6; /* 用户填写区灰色 */
+    border-right: 1px solid #000;
+    border-bottom: 1px solid #000;
+  }
+
+  .cell.prefilled { 
+    font-weight: 800; 
+    cursor: default; 
+    background-color: #ffffff; 
+    color: #000;
+  }
+
+  .cell.selected { 
+    background-color: #bbdefb !important; 
+    outline: none;
+  }
+  
+  /* 粗线条逻辑 */
+  .cell.border-right-bold { border-right: 3px solid #000; }
+  .cell.border-bottom-bold { border-bottom: 3px solid #000; }
+  .cell:nth-child(9n) { border-right: none; } 
+  .cell:nth-last-child(-n+9) { border-bottom: none; }
+
+  /* 右侧面板区域 */
+  .right-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* 数字选项区 */
+  .number-options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  
+  .num-btn {
+    width: 45px;
+    height: 45px;
+    padding: 0;
+    margin: 0;
+    font-size: 22px;
+    background-color: #f8f9fa;
+    color: #333;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .num-btn:hover { background-color: #e2e6ea; border-color: #adb5bd; color: #0056b3; }
+  .num-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  /* 工具栏 (Undo, Redo, etc) */
+  .tools-options {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+
+  .tool-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+    background-color: #ffc107;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #333;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: 0.2s;
+    height: 60px;
+    width: 50px;
+  }
+  .tool-btn:hover { background-color: #e0a800; transform: translateY(-2px); }
+  .tool-btn:active { transform: translateY(0); }
+  .tool-btn:disabled { background-color: #e9ecef; color: #adb5bd; cursor: not-allowed; transform: none;}
+
+  .tool-icon { font-size: 20px; margin-bottom: 2px; }
+  .tool-name { font-size: 10px; font-weight: bold; text-transform: uppercase; }
+
+  .footer { position: fixed; bottom: 10px; left: 10px; font-size: 14px; opacity: 0.9; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+  .timer-score { display: flex; justify-content: center; gap: 30px; margin-top: 15px; font-size: 22px; font-weight: bold;}
+  .feedback { margin-top: 15px; font-size: 22px; min-height: 30px; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);}
+  .feedback.correct { color: #ccffcc; }
+  .feedback.incorrect { color: #ffcccc; }
+
+  @media (max-width: 650px){
+    .sudoku-container { flex-direction: column; align-items: center; gap: 15px; padding: 10px;}
+    .sudoku-grid { grid-template-columns: repeat(9, 34px); grid-template-rows: repeat(9,34px);}
+    .cell { width: 34px; height: 34px; font-size: 18px; line-height: 34px; }
+    
+    .right-panel { width: 100%; align-items: center;}
+    .number-options { grid-template-columns: repeat(9, 1fr); width: 100%; justify-content: center;}
+    .num-btn { width: 32px; height: 32px; font-size: 16px; }
+    
+    .tools-options { gap: 15px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="start-screen" id="startScreen">
+  <h1>Sudoku Challenge</h1>
+  <button class="control-btn" onclick="startGame()">Start Game</button>
+</div>
+
+<div class="game-container" id="gameContainer" style="display:none;">
+  <div class="timer-score">
+    <div>Time: <span id="timer">600</span>s</div>
+    <div>Score: <span id="score">0</span></div>
+  </div>
+
+  <div class="sudoku-container">
+    <div class="sudoku-grid" id="sudokuGrid"></div>
+    
+    <div class="right-panel">
+      <div class="number-options" id="numberOptions"></div>
+      
+      <div class="tools-options">
+        <button class="tool-btn" onclick="undo()" id="btnUndo" title="Undo">
+          <span class="tool-icon">&#8617;</span>
+          <span class="tool-name">Undo</span>
+        </button>
+        <button class="tool-btn" onclick="redo()" id="btnRedo" title="Redo">
+          <span class="tool-icon">&#8618;</span>
+          <span class="tool-name">Redo</span>
+        </button>
+        <button class="tool-btn" onclick="deleteNumber()" id="btnDelete" title="Delete">
+          <span class="tool-icon">&#128465;</span>
+          <span class="tool-name">Del</span>
+        </button>
+        <button class="tool-btn" onclick="useHint()" id="btnHint" title="Hint">
+          <span class="tool-icon">&#128161;</span>
+          <span class="tool-name">Hint <span id="hintCount">(2)</span></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:20px;">
+    <button class="control-btn" onclick="checkSudoku()" id="btnCheck" style="background-color:#007bff;">Check Answer</button>
+    <button class="control-btn" onclick="newSudoku()" style="background-color:#17a2b8;">New Game</button>
+    <button class="control-btn" onclick="exitGame()" style="background-color:#dc3545;">Exit</button>
+  </div>
+
+  <div class="feedback" id="feedback"></div>
+</div>
+
+<div class="footer">
+  Author: XIA RUI DONG | Contact: xiarui091@gmail.com
+</div>
+
+<script>
+let board = [];
+let solution = [];
+let timerInterval = null;
+let timeLeft = 600;
+let score = 0;
+let selectedCell = null;
+let gameActive = false; // 控制游戏是否可操作
+
+// 历史记录与提示
+let history = []; 
+let historyStep = -1;
+let hintsLeft = 2;
+
+function startGame(){
+  document.getElementById("startScreen").style.display = "none";
+  document.getElementById("gameContainer").style.display = "flex";
+  score = 0; document.getElementById("score").innerText = score;
+  newSudoku();
+}
+
+function exitGame(){
+  clearInterval(timerInterval);
+  document.getElementById("gameContainer").style.display = "none";
+  document.getElementById("startScreen").style.display = "flex";
+}
+
+function startTimer(){
+  clearInterval(timerInterval);
+  timeLeft = 600;
+  document.getElementById("timer").innerText = timeLeft;
+  gameActive = true;
+  updateUIState();
+  
+  timerInterval = setInterval(()=>{
+    timeLeft--;
+    document.getElementById("timer").innerText = timeLeft;
+    if(timeLeft<=0){
+      clearInterval(timerInterval);
+      endGameTimeUp();
+    }
+  },1000);
+}
+
+function endGameTimeUp(){
+  gameActive = false;
+  document.getElementById("feedback").innerText = "Time's up! Game Over.";
+  document.getElementById("feedback").className = "feedback incorrect";
+  updateUIState();
+}
+
+// 启用/禁用按钮
+function updateUIState(){
+  const btns = document.querySelectorAll('.num-btn, .tool-btn, #btnCheck');
+  btns.forEach(btn => {
+    if(!gameActive && btn.innerText !== "New Game" && btn.innerText !== "Exit"){
+      btn.disabled = true;
+    } else {
+      btn.disabled = false;
+    }
+  });
+
+  // 单独处理 Hint 按钮
+  const hintBtn = document.getElementById("btnHint");
+  if(hintsLeft <= 0 || !gameActive) hintBtn.disabled = true;
+}
+
+function generateEmptyGrid(){ return Array.from({length:9},()=>Array(9).fill(0)); }
+
+function fillBoard(b){
+  function isValid(num,row,col){
+    for(let i=0;i<9;i++){
+      if(b[row][i]===num || b[i][col]===num) return false;
+    }
+    let startRow=Math.floor(row/3)*3,startCol=Math.floor(col/3)*3;
+    for(let i=0;i<3;i++) for(let j=0;j<3;j++) if(b[startRow+i][startCol+j]===num) return false;
+    return true;
+  }
+  for(let r=0;r<9;r++){
+    for(let c=0;c<9;c++){
+      if(b[r][c]===0){
+        let nums=[1,2,3,4,5,6,7,8,9].sort(()=>Math.random()-0.5);
+        for(let n of nums){
+          if(isValid(n,r,c)){
+            b[r][c]=n;
+            if(fillBoard(b)) return true;
+            b[r][c]=0;
+          }
+        }
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+function removeCells(b,difficulty=40){
+  let cellsToRemove=difficulty;
+  while(cellsToRemove>0){
+    let r=Math.floor(Math.random()*9);
+    let c=Math.floor(Math.random()*9);
+    if(b[r][c]!==0){
+      b[r][c]=0;
+      cellsToRemove--;
+    }
+  }
+  return b;
+}
+
+function newSudoku(){
+  board = generateEmptyGrid();
+  fillBoard(board);
+  solution = board.map(r=>[...r]);
+  board = removeCells(board);
+  
+  // 重置状态
+  selectedCell = null;
+  history = [];
+  historyStep = -1;
+  hintsLeft = 2;
+  document.getElementById("hintCount").innerText = `(${hintsLeft})`;
+  document.getElementById("feedback").innerText="";
+  
+  startTimer(); // 重新开始计时
+  renderGrid();
+  renderNumberOptions();
+  updateUIState();
+}
+
+function renderGrid(){
+  const grid = document.getElementById("sudokuGrid");
+  grid.innerHTML = "";
+  for(let r=0;r<9;r++){
+    for(let c=0;c<9;c++){
+      let cell = document.createElement("div");
+      cell.className = "cell";
+      if((c + 1) % 3 === 0 && c < 8) cell.classList.add("border-right-bold");
+      if((r + 1) % 3 === 0 && r < 8) cell.classList.add("border-bottom-bold");
+
+      if(board[r][c]!==0){
+        cell.innerText = board[r][c];
+        // 如果是初始非零值，认为是题目，不允许修改（除非是后填的，这里简单起见，只有newSudoku时的才算prefilled）
+        // 这里逻辑稍作修改：因为重绘网格时 board 包含了用户的填入。
+        // 我们需要一种方式区分初始题目。简单方式：判断 prefilled class
+        // 但最稳妥是 newSudoku 时保存初始盘面。
+        // 简化处理：每次 newSudoku 生成 initialBoard。
+      } else {
+         cell.onclick = ()=>selectCell(r,c,cell);
+      }
+      
+      // 标记题目（这里简化：我们假设 board[r][c] 不为0 且是新游戏生成的才加 prefilled）
+      // 更好的做法：使用 dataset 标记
+      grid.appendChild(cell);
+    }
+  }
+  // 修正：上面的 renderGrid 逻辑在历史回溯时会丢失 "prefilled" 状态。
+  // 我们需要一个 persistent 的 initialBoard。
+  // 为简单起见，我们重新设计一下 render: 
+  // 每次只更新 text，不销毁 div，除非 new game。
+}
+
+// 优化后的初始化 Grid，只运行一次
+function initGridDOM(initialBoard) {
+  const grid = document.getElementById("sudokuGrid");
+  grid.innerHTML = "";
+  for(let r=0;r<9;r++){
+    for(let c=0;c<9;c++){
+      let cell = document.createElement("div");
+      cell.className = "cell";
+      cell.dataset.row = r;
+      cell.dataset.col = c;
+      if((c + 1) % 3 === 0 && c < 8) cell.classList.add("border-right-bold");
+      if((r + 1) % 3 === 0 && r < 8) cell.classList.add("border-bottom-bold");
+
+      if(initialBoard[r][c] !== 0) {
+        cell.innerText = initialBoard[r][c];
+        cell.classList.add("prefilled");
+      } else {
+        cell.onclick = () => selectCell(r,c,cell);
+      }
+      grid.appendChild(cell);
+    }
+  }
+}
+
+// 覆盖之前的 newSudoku 调用逻辑
+let initialBoard = [];
+const _originalNewSudoku = newSudoku;
+newSudoku = function() {
+  board = generateEmptyGrid();
+  fillBoard(board);
+  solution = board.map(r=>[...r]);
+  board = removeCells(board);
+  initialBoard = board.map(r=>[...r]); // 保存初始盘面
+
+  selectedCell = null;
+  history = [];
+  historyStep = -1;
+  hintsLeft = 2;
+  document.getElementById("hintCount").innerText = `(${hintsLeft})`;
+  document.getElementById("feedback").innerText="";
+
+  startTimer();
+  initGridDOM(initialBoard); // 构建 DOM
+  renderNumberOptions();
+  updateUIState();
+}
+
+function selectCell(r,c,cell){
+  if(!gameActive) return; // 游戏结束不能选
+  if(selectedCell) selectedCell.classList.remove("selected");
+  selectedCell = cell;
+  selectedCell.classList.add("selected");
+}
+
+function renderNumberOptions(){
+  const container = document.getElementById("numberOptions");
+  container.innerHTML = "";
+  for(let n=1;n<=9;n++){
+    let btn = document.createElement("button");
+    btn.innerText = n;
+    btn.className = "num-btn";
+    btn.onclick = ()=>insertNumber(n);
+    container.appendChild(btn);
+  }
+}
+
+// --- 核心操作逻辑 ---
+
+function saveState(r, c, oldVal, newVal) {
+  // 如果当前不在历史记录末尾，删除后面的记录
+  if(historyStep < history.length - 1) {
+    history = history.slice(0, historyStep + 1);
+  }
+  history.push({r, c, oldVal, newVal});
+  historyStep++;
+}
+
+function insertNumber(num){
+  if(!gameActive || !selectedCell) return;
+  if(selectedCell.classList.contains("prefilled")) return;
+
+  let r = parseInt(selectedCell.dataset.row);
+  let c = parseInt(selectedCell.dataset.col);
+  let currentVal = board[r][c];
+
+  if(currentVal === num) return; // 值没变，不操作
+
+  saveState(r, c, currentVal, num);
+  
+  board[r][c] = num;
+  selectedCell.innerText = num;
+}
+
+function deleteNumber(){
+  if(!gameActive || !selectedCell) return;
+  if(selectedCell.classList.contains("prefilled")) return;
+  
+  let r = parseInt(selectedCell.dataset.row);
+  let c = parseInt(selectedCell.dataset.col);
+  let currentVal = board[r][c];
+
+  if(currentVal === 0) return; // 已经是空的
+
+  saveState(r, c, currentVal, 0);
+
+  board[r][c] = 0;
+  selectedCell.innerText = "";
+}
+
+function undo(){
+  if(!gameActive || historyStep < 0) return;
+  
+  let action = history[historyStep];
+  historyStep--;
+  
+  // 执行撤销：将位置设回 oldVal
+  board[action.r][action.c] = action.oldVal;
+  updateCellDOM(action.r, action.c, action.oldVal);
+}
+
+function redo(){
+  if(!gameActive || historyStep >= history.length - 1) return;
+  
+  historyStep++;
+  let action = history[historyStep];
+  
+  // 执行重做：将位置设为 newVal
+  board[action.r][action.c] = action.newVal;
+  updateCellDOM(action.r, action.c, action.newVal);
+}
+
+function updateCellDOM(r, c, val){
+  // 找到对应的 cell DOM
+  const grid = document.getElementById("sudokuGrid");
+  // 简单计算 index: r * 9 + c
+  const cell = grid.children[r*9 + c];
+  cell.innerText = val === 0 ? "" : val;
+}
+
+function useHint(){
+  if(!gameActive) return;
+  if(hintsLeft <= 0) return;
+  if(!selectedCell) {
+    alert("Please select a cell to reveal!");
+    return;
+  }
+  if(selectedCell.classList.contains("prefilled")) {
+    alert("This cell is already part of the puzzle.");
+    return;
+  }
+
+  let r = parseInt(selectedCell.dataset.row);
+  let c = parseInt(selectedCell.dataset.col);
+  
+  let correctVal = solution[r][c];
+  
+  // 如果已经填了正确的，就不要浪费 Hint
+  if(board[r][c] === correctVal){
+    alert("This cell is already correct!");
+    return;
+  }
+
+  // 记录历史（方便撤销 Hint? 通常 Hint 不建议撤销，但为了保持 board 一致性，还是记一下吧）
+  // 这里的逻辑是：Hint 也是一种修改。
+  saveState(r, c, board[r][c], correctVal);
+
+  board[r][c] = correctVal;
+  selectedCell.innerText = correctVal;
+  
+  // 扣除次数
+  hintsLeft--;
+  document.getElementById("hintCount").innerText = `(${hintsLeft})`;
+  if(hintsLeft === 0) {
+    document.getElementById("btnHint").disabled = true;
+  }
+}
+
+function checkSudoku(){
+  if(!gameActive) return;
+  let correct=true;
+  for(let r=0;r<9;r++){
+    for(let c=0;c<9;c++){
+      if(board[r][c]!==solution[r][c]) correct=false;
+    }
+  }
+  let feedback = document.getElementById("feedback");
+  if(correct){
+    feedback.innerText="Correct! Excellent job! 🎉";
+    feedback.className="feedback correct";
+    score+=100; document.getElementById("score").innerText=score;
+    clearInterval(timerInterval); // 赢了也停止计时
+    gameActive = false; // 锁定
+    updateUIState();
+  } else{
+    feedback.innerText="Something is wrong. Keep looking!";
+    feedback.className="feedback incorrect";
+  }
+}
+</script>
+
+</body>
+</html>
