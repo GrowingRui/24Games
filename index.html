@@ -176,6 +176,7 @@
             font-size: 18px;
             padding: 10px 20px;
             margin: 10px;
+            white-space: nowrap;
         }
 
         .backspace-button:hover {
@@ -302,8 +303,8 @@
             }
 
             .backspace-button {
-                font-size: 16px;
-                padding: 8px 15px;
+                font-size: 14px;
+                padding: 8px 10px;
                 margin: 8px;
             }
 
@@ -367,7 +368,7 @@
     <div class="controls">
         <button onclick="resetExpression()">Reset</button>
         <button onclick="newGame()">New Game</button>
-        <button class="backspace-button" onclick="backspace()">Backspace</button>
+        <button class="backspace-button" onclick="backspace()">⌫</button>
         <button class="submit-button" onclick="checkAnswer()">Submit Answer</button>
         <button class="exit-button" onclick="exitGame()">Exit</button>
     </div>
@@ -616,7 +617,7 @@
                     { val: a * b, str: `(${exprA}*${exprB})` }
                 ];
 
-                if (b !== 0) {
+                if (b !== 0 && a % b === 0) {
                     operations.push({ val: a / b, str: `(${exprA}/${exprB})` });
                 }
 
@@ -646,3 +647,4 @@
 </script>
 
 </body>
+</html>
