@@ -367,7 +367,7 @@
 
     <div class="controls">
         <button onclick="resetExpression()">Reset</button>
-        <button onclick="newGame()">New Game</button>
+        <button onclick="newGameWithTimer()">New Game</button>
         <button class="backspace-button" onclick="backspace()">⌫</button>
         <button class="submit-button" onclick="checkAnswer()">Submit Answer</button>
         <button class="exit-button" onclick="exitGame()">Exit</button>
@@ -423,6 +423,14 @@
         document.getElementById("feedback").innerText = "";
         numbers = generateSolvableNumbers();
         renderNumbers();
+    }
+
+    function newGameWithTimer() {
+        clearInterval(timerInterval);
+        timeLeft = 180;
+        document.getElementById("timer").innerText = timeLeft;
+        startTimer();
+        newGame();
     }
 
     function generateSolvableNumbers() {
