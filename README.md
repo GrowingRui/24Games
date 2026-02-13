@@ -2,4 +2,6 @@
 Welcome to the 24 Game, an engaging online puzzle challenge that tests your mathematical skills and creativity! 
 The objective is simple yet thrilling: use four numbers to create an expression that equals 24, employing basic arithmetic operations—addition, subtraction, multiplication, and division.
 
-To access the game 24 point game click here -> https://growingrui.github.io/brainstorming/24-point-game
+To access the game 24 point please click here -> https://growingrui.github.io/brainstorming/24-point-game
+To access the game sudoku please click here -> https://growingrui.github.io/brainstorming/sudoku-game
+
