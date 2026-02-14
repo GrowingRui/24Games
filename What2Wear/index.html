@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>What2Wear - Dynamic Background Fixed</title>
+    <title>What2Wear - Updated i18n Content</title>
     <style>
         :root { --glass: rgba(255, 255, 255, 0.15); --border: rgba(255, 255, 255, 0.25); }
         * { box-sizing: border-box; }
@@ -14,7 +14,7 @@
         .sun-glow { position: absolute; top: -10%; right: -10%; width: 70vw; height: 70vw; background: radial-gradient(circle, rgba(255,255,150,0.3) 0%, rgba(255,255,255,0) 70%); animation: pulse 6s infinite alternate; }
         @keyframes pulse { from { opacity: 0.4; transform: scale(1); } to { opacity: 0.7; transform: scale(1.1); } }
         
-        .rain { position: absolute; background: rgba(255,255,255,0.4); width: 2px; height: 15px; top: -20px; animation: fall linear infinite; }
+        .rain { position: absolute; background: rgba(255,255,255,0.4); height: 20px; top: -30px; animation: fall linear infinite; }
         @keyframes fall { to { transform: translateY(110vh); } }
         
         .snow { position: absolute; background: white; border-radius: 50%; opacity: 0.8; top: -10px; animation: snowFall linear infinite; }
@@ -38,7 +38,7 @@
         .aqi-bar-container { width: 100%; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; margin-top: 8px; overflow: hidden; }
         #aqi-bar-fill { height: 100%; width: 0%; transition: 1s ease-in-out; border-radius: 2px; }
         .temp { font-size: 4.5rem; font-weight: 100; margin: 0; }
-        .advice-box { background: rgba(0,0,0,0.15); border-radius: 20px; padding: 18px; font-size: 0.85rem; line-height: 1.6; margin: 15px 0; min-height: 110px; text-align: left; }
+        .advice-box { background: rgba(0,0,0,0.15); border-radius: 20px; padding: 18px; font-size: 0.85rem; line-height: 1.6; margin: 15px 0; min-height: 125px; text-align: left; }
         body.rtl .advice-box { text-align: right; }
         .hourly-scroll { display: flex; overflow-x: auto; gap: 15px; padding: 15px 5px; margin-top: 10px; border-top: 1px solid var(--border); }
         .hourly-scroll::-webkit-scrollbar { height: 4px; }
@@ -100,14 +100,78 @@
     let currentAQI = 1;
     let dayOffset = 0; 
 
+    // 使用你提供的最新 i18n 配置
     const i18n = {
-        zh_cn: { today: "今天", tomorrow: "明天", d_after: "后天", search: "搜索城市...", uv: "紫外线", aqi: "空气质量", uv_low: "低辐射", uv_high: "需防晒", aqi_good: "空气清新", aqi_bad: "污染警告", hot: "🔥 酷热：穿着极简，背心短裤为宜。请涂抹 SPF50+ 防晒霜，多喝水以防中暑。", warm: "☀️ 炎热：建议穿棉质短袖 T 恤、短裙。室内空调房可备一件超薄衬衫防冷气。", comfortable: "🍃 宜人：单穿长袖衬衫、T 恤或薄卫衣即可。23°C 左右体感非常舒适，无需外套。", chilly: "🌤️ 微凉：需叠穿一件防风夹克、薄毛衣或针织开衫。早晚温差大，请注意保暖。", cold: "🧥 寒冷：建议羊绒衫搭配毛呢大衣，或穿着保暖厚夹克。此时应戴围巾保护颈部。", freezing: "❄️ 严寒：厚重羽绒服与保暖内衣是必备。请佩戴手套和耳罩，防止皮肤冻伤。", rain: " ☔ 出门请务必带伞，并穿着防水鞋类以保持干爽。" },
-        en: { today: "TODAY", tomorrow: "TOMORROW", d_after: "OVERMORROW", search: "Search...", uv: "UV INDEX", aqi: "AIR QUALITY", uv_low: "Low Risk", uv_high: "Use SPF", aqi_good: "Good Air", aqi_bad: "Pollution", hot: "🔥 Scorching: Wear light vests and shorts. Apply SPF 50+ sunscreen and stay hydrated.", warm: "☀️ Warm: T-shirts and linen skirts. Keep a light shirt handy for air-conditioned indoor spaces.", comfortable: "🍃 Pleasant: A long-sleeve shirt or T-shirt is sufficient. No jacket is needed at 23°C.", chilly: "🌤️ Chilly: Layer up with a windbreaker or cardigan. Be mindful of night temperature drops.", cold: "🧥 Cold: A heavy wool coat or insulated jacket. Wear a scarf to protect your neck.", freezing: "❄️ Freezing: A thick puffer jacket and thermal layers are mandatory. Wear gloves and a beanie.", rain: " ☔ Don't forget your umbrella and waterproof footwear to stay dry." },
-        es: { today: "HOY", tomorrow: "MAÑANA", d_after: "PASADO MAÑANA", search: "Buscar...", uv: "ÍNDICE UV", aqi: "CALIDAD AIRE", uv_low: "Bajo", uv_high: "Usa SPF", aqi_good: "Limpio", aqi_bad: "Contaminado", hot: "🔥 Calor: Use ropa ligera. Aplique protector solar SPF 50+ y beba mucha agua.", warm: "☀️ Cálido: Camisetas de algodón y faldas. Tenga a mano una camisa para interiores con aire.", comfortable: "🍃 Agradable: Una camisa de manga larga es suficiente. No hace falta chaqueta a 23°C.", chilly: "🌤️ Fresco: Use una chaqueta ligera. Tenga cuidado con el descenso de temperatura por la noche.", cold: "🧥 Frío: Un abrigo de lana grueso. Use una bufanda para proteger su cuello.", freezing: "❄️ Gélido: Chaqueta de plumas y capas térmicas. Use guantes y gorro para el frío.", rain: " ☔ No olvides tu paraguas y calzado impermeable para mantenerte seco." },
-        fr: { today: "AUJOURD'HUI", tomorrow: "DEMAIN", d_after: "APRÈS-DEMAIN", search: "Chercher...", uv: "INDICE UV", aqi: "QUALITÉ L'AIR", uv_low: "Bas", uv_high: "Protection", aqi_good: "Air Pur", aqi_bad: "Pollution", hot: "🔥 Canicule: Débardeurs légers. Appliquez SPF 50+ et hydratez-vous régulièrement.", warm: "☀️ Chaud: T-shirts en coton. Prévoyez une chemise fine pour les lieux climatisés.", comfortable: "🍃 Agréable: Un t-shirt manches longues suffit. Aucune veste n'est requise à 23°C.", chilly: "🌤️ Frais: Un coupe-vent ou un gilet. Attention à la fraîcheur matinale et nocturne.", cold: "🧥 Froid: Manteau de laine épais. Portez une écharpe pour protéger votre cou.", freezing: "❄️ Gel: Doudoune épaisse et vêtements thermiques. Portez des gants et un bonnet.", rain: " ☔ N'oubliez pas votre parapluie et des chaussures imperméables." },
-        de: { today: "HEUTE", tomorrow: "MORGEN", d_after: "ÜBERMORGEN", search: "Suche...", uv: "UV INDEX", aqi: "LUFTQUALITÄT", uv_low: "Niedrig", uv_high: "Schutz", aqi_good: "Gute Luft", aqi_bad: "Belastung", hot: "🔥 Hitze: Leichte Westen. Tragen Sie SPF 50+ auf und trinken Sie viel Wasser.", warm: "☀️ Warm: T-shirts und Leinenröcke. Halten Sie ein Hemd für klimatisierte Räume bereit.", comfortable: "🍃 Angenehm: Ein Langarmshirt reicht aus. Bei 23°C ist keine Jacke erforderlich.", chilly: "🌤️ Kühl: Windjacke oder Strickjacke. Vorsicht bei Temperaturabfällen am Abend.", cold: "🧥 Kalt: Schwerer Wollmantel. Schal zum Schutz des Halses tragen.", freezing: "❄️ Eisig: Daunenjacke und Thermoschichten Pflicht. Handschuhe und Mützen benutzen.", rain: " ☔ Regenschirm und wasserfeste Schuhe nicht vergessen." },
-        ru: { today: "СЕГОДНЯ", tomorrow: "ЗАВТРА", d_after: "ПОСЛЕЗАВТРА", search: "Поиск...", uv: "УФ", aqi: "ВОЗДУХ", uv_low: "Низкий", uv_high: "Защита", aqi_good: "Чисто", aqi_bad: "Грязно", hot: "🔥 Жара: Майки и шорты. Нанесите SPF 50+ и пейте больше воды.", warm: "☀️ Тепло: Хлопковые футболки. Возьмите легкую рубашку для помещений с кондиционером.", comfortable: "🍃 Приятно: Достаточно лонгслива. При 23°C куртка не требуется.", chilly: "🌤️ Прохладно: Наденьте ветровку. Берегитесь перепадов температур утром и вечером.", cold: "🧥 Холодно: Теплое пальто. Наденьте шарф для защиты шеи.", freezing: "❄️ Мороз: Пуховик и термобелье обязательны. Используйте перчатки и шапки.", rain: " ☔ Возьмите зонт и надевайте непромокаемую обувь." },
-        ar: { today: "اليوم", tomorrow: "غداً", d_after: "بعد غد", search: "بحث...", uv: "مؤشر الأشعة", aqi: "جودة الهواء", uv_low: "منخفض", uv_high: "واقي", aqi_good: "نقي", aqi_bad: "تلوث", hot: "🔥 حرارة شديدة: ملابس خفيفة. استخدم واقي شمس SPF 50+ واشرب الماء بانتظام.", warm: "☀️ دافئ: قمصان قطنية خفيفة. احتفظ بقميص رقيق للمناطق المغلقة والمكيفة.", comfortable: "🍃 لطيف: قميص واحد بأكمام طويلة كافٍ. لا داعي لسترة إضافية عند 23 درجة.", chilly: "🌤️ بارد قليلاً: سترة واقية. انتبه لبرودة الجو في الصباح والمساء.", cold: "🧥 بارد: معطف صوف ثقيل. ارتدي وشاحاً لحماية رقبتك من الهواء البارد.", freezing: "❄️ شديد البرودة: سترة منفوخة وملابس حرارية. يجب استخدام القفازات والقبعات.", rain: " ☔ يرجى حمل المظلة وارتداء أحذية مقاومة للماء لتبقى جافاً." }
+        zh_cn: {
+            today: "今天", tomorrow: "明天", d_after: "后天", search: "搜索城市...", uv: "紫外线", aqi: "空气质量", uv_low: "低辐射", uv_high: "需防晒", aqi_good: "空气清新", aqi_bad: "污染警告",
+            hot: "🔥 酷热：穿着极简，背心短裤为宜。请涂抹 SPF50+ 防晒霜，多喝水以防中暑。",
+            warm: "☀️ 炎热：建议穿棉质短袖 T 恤、短裙。室内空调房可备一件超薄衬衫防冷气。",
+            comfortable: "🍃 宜人：单穿长袖衫、T 恤或薄卫衣即可。23°C 左右体感非常舒适，无需外套。",
+            chilly: "🌤️ 微凉：需叠穿一件防风夹克、薄毛衣或针织开衫。早晚温差大，请注意保暖。",
+            cold: "🧥 寒冷：建议羊绒衫搭配毛呢大衣，或穿着保暖厚夹克。此时应戴围巾保护颈部。",
+            freezing: "❄️ 严寒：厚重羽绒服与保暖内衣是必备。请佩戴手套和耳罩，防止皮肤冻伤。",
+            rain: " ☔ 出门请务必带伞，并穿着防水鞋类以保持干爽。"
+        },
+        en: {
+            today: "TODAY", tomorrow: "TOMORROW", d_after: "DAY AFTER", search: "Search city...", uv: "UV INDEX", aqi: "AIR QUALITY", uv_low: "Low Risk", uv_high: "Use SPF", aqi_good: "Good Air", aqi_bad: "Pollution",
+            hot: "🔥 Scorching: Wear light clothing such as tank tops and shorts. Apply SPF 50+ sunscreen and drink plenty of water to prevent heatstroke.",
+            warm: "☀️ Warm: Cotton short-sleeve T-shirts and skirts are recommended. Keep a light layer handy for air-conditioned spaces.",
+            comfortable: "🍃 Pleasant: A long-sleeve shirt, T-shirt, or light hoodie is enough. It feels very comfortable around 23°C; no jacket needed.",
+            chilly: "🌤️ Chilly: Layer up with a windbreaker, light sweater, or cardigan. Watch out for cooler temperatures in the evening.",
+            cold: "🧥 Cold: A cashmere sweater with a wool coat or a thick jacket is recommended. Wear a scarf to protect your neck.",
+            freezing: "❄️ Freezing: A heavy puffer jacket and thermal underwear are essential. Wear gloves and earmuffs to prevent frostbite.",
+            rain: " ☔ Bring an umbrella and wear waterproof shoes to stay dry."
+        },
+        es: {
+            today: "HOY", tomorrow: "MAÑANA", d_after: "PASADO", search: "Buscar ciudad...", uv: "ÍNDICE UV", aqi: "CALIDAD DEL AIRE", uv_low: "Riesgo Bajo", uv_high: "Usa SPF", aqi_good: "Aire Limpio", aqi_bad: "Contaminado",
+            hot: "🔥 Abrasador: Lleve ropa lo más ligera posible, como camisetas sin mangas y pantalones cortos. Aplique protector solar SPF 50+ y beba abundante agua para evitar golpes de calor.",
+            warm: "☀️ Cálido: Se recomiendan camisetas de algodón de manga corta y faldas. Tenga a mano una prenda ligera para interiores con aire acondicionado.",
+            comfortable: "🍃 Agradable: Una camisa de manga larga, camiseta o sudadera ligera es suficiente. Se siente muy cómodo a unos 23°C; no se necesita chaqueta.",
+            chilly: "🌤️ Fresco: Vístase por capas con un cortavientos o un suéter ligero. Tenga en cuenta la bajada de temperatura por la noche.",
+            cold: "🧥 Frío: Se recomienda un suéter de cachemir con un abrigo de lana o una chaqueta gruesa. Use una bufanda para proteger el cuello.",
+            freezing: "❄️ Gélido: Un abrigo de plumas grueso y ropa térmica son esenciales. Use guantes y orejeras para evitar la congelación.",
+            rain: " ☔ Lleve paraguas y use calzado impermeable para mantenerse seco."
+        },
+        fr: {
+            today: "AUJOURD'HUI", tomorrow: "DEMAIN", d_after: "APRÈS-DEMAIN", search: "Chercher...", uv: "INDICE UV", aqi: "QUALITÉ DE L'AIR", uv_low: "Bas", uv_high: "Protection", aqi_good: "Air Pur", aqi_bad: "Pollution",
+            hot: "🔥 Canicule : Portez des vêtements légers comme des débardeurs. Appliquez de la crème solaire SPF 50+ et buvez beaucoup d'eau.",
+            warm: "☀️ Chaud : Des t-shirts en coton et des jupes sont recommandés. Prévoyez une couche légère pour les pièces climatisées.",
+            comfortable: "🍃 Agréable : Un t-shirt à manches longues ou un sweat léger suffit. À 23°C, c'est très confortable ; pas besoin de veste.",
+            chilly: "🌤️ Frais : Superposez un coupe-vent ou un pull léger. Attention à la baisse de température en soirée.",
+            cold: "🧥 Froid : Un pull en cachemire avec un manteau en laine est recommandé. Portez une écharpe pour protéger votre cou.",
+            freezing: "❄️ Gel : Une doudoune épaisse et des sous-vêtements thermiques sont indispensables. Portez des gants et des cache-oreilles.",
+            rain: " ☔ N'oubliez pas votre parapluie et portez des chaussures imperméables pour rester au sec."
+        },
+        de: {
+            today: "HEUTE", tomorrow: "MORGEN", d_after: "ÜBERMORGEN", search: "Stadt suchen...", uv: "UV INDEX", aqi: "LUFTQUALITÄT", uv_low: "Niedrig", uv_high: "Schutz", aqi_good: "Gute Luft", aqi_bad: "Belastung",
+            hot: "🔥 Hitze: Tragen Sie leichte Kleidung wie Tanktops und Shorts. Verwenden Sie Sonnencreme mit SPF 50+ und trinken Sie viel Wasser.",
+            warm: "☀️ Warm: Baumwoll-T-Shirts und Röcke werden empfohlen. Halten Sie eine leichte Schicht für klimatisierte Räume bereit.",
+            comfortable: "🍃 Angenehm: Ein Langarmshirt oder ein leichter Hoodie reicht aus. Bei ca. 23°C ist es sehr angenehm; keine Jacke nötig.",
+            chilly: "🌤️ Kühl: Ziehen Sie sich im Zwiebellook mit Windjacke oder leichtem Pullover an. Achten Sie auf kühlere Temperaturen am Abend.",
+            cold: "🧥 Kalt: Ein Kaschmirpullover mit Wollmantel oder eine dicke Jacke wird empfohlen. Tragen Sie einen Schal zum Schutz des Halses.",
+            freezing: "❄️ Eiskalt: Eine dicke Daunenjacke und Thermounterwäsche sind wichtig. Tragen Sie Handschuhe und Ohrenschützer.",
+            rain: " ☔ Nehmen Sie einen Regenschirm mit und tragen Sie wasserfeste Schuhe, um trocken zu bleiben."
+        },
+        ru: {
+            today: "СЕГОДНЯ", tomorrow: "ЗАВТРА", d_after: "ПОСЛЕЗАВТРА", search: "Поиск...", uv: "УФ-ИНДЕКС", aqi: "КАЧЕСТВО ВОЗДУХА", uv_low: "Низкий", uv_high: "Защита", aqi_good: "Чисто", aqi_bad: "Загрязнение",
+            hot: "🔥 Жара: Носите лёгкую одежду, например майку и шорты. Нанесите солнцезащитный крем SPF 50+ и пейте больше воды.",
+            warm: "☀️ Тепло: Рекомендуются хлопковые футболки и юбки. Держите лёгкую накидку для помещений с кондиционером.",
+            comfortable: "🍃 Приятно: Достаточно футболки с длинным рукавом или лёгкого свитшота. При 23°C очень комфортно; куртка не нужна.",
+            chilly: "🌤️ Прохладно: Одевайтесь слоями — ветровка или лёгкий свитер подойдут. Учитывайте похолодание вечером.",
+            cold: "🧥 Холодно: Рекомендуется кашемировый свитер с шерстяным пальто или тёплая куртка. Наденьте шарф для защиты шеи.",
+            freezing: "❄️ Мороз: Тёплый пуховик и термобельё обязательны. Наденьте перчатки и тёплую шапку, чтобы избежать обморожения.",
+            rain: " ☔ Возьмите зонт и наденьте непромокаемую обувь, чтобы остаться сухим."
+        },
+        ar: {
+            today: "اليوم", tomorrow: "غداً", d_after: "بعد غد", search: "بحث عن مدينة...", uv: "مؤشر الأشعة فوق البنفسجية", aqi: "جودة الهواء", uv_low: "منخفض", uv_high: "استخدم واقي شمس", aqi_good: "هواء نقي", aqi_bad: "تلوث",
+            hot: "🔥 حرارة شديدة: ارتدِ ملابس خفيفة مثل القمصان بدون أكمام والسراويل القصيرة. ضع واقي شمس SPF 50+ واشرب الكثير من الماء.",
+            warm: "☀️ دافئ: يُنصح بارتداء قمصان قطنية بأكمام قصيرة وتنانير. احتفظ بطبقة خفيفة للأماكن المكيفة.",
+            comfortable: "🍃 لطيف: يكفي قميص بأكمام طويلة أو سترة خفيفة. الجو مريح جداً عند 23 درجة مئوية؛ لا حاجة لسترة.",
+            chilly: "🌤️ بارد قليلاً: ارتدِ ملابس على طبقات مع سترة خفيفة. انتبه لانخفاض الحرارة في المساء.",
+            cold: "🧥 بارد: يُفضل ارتداء كنزة كشمير مع معطف صوف أو سترة سميكة. ارتدِ وشاحاً لحماية الرقبة.",
+            freezing: "❄️ شديد البرودة: معطف شتوي ثقيل وملابس حرارية ضرورية. ارتدِ قفازات وغطاء للرأس لتجنب الصقيع.",
+            rain: " ☔ أحضر مظلة وارتدِ أحذية مقاومة للماء للبقاء جافاً."
+        }
     };
 
     window.onload = () => {
@@ -142,7 +206,6 @@
     function updateDisplay() {
         if (!weatherData) return;
         document.getElementById('location').innerText = weatherData.city.name.toUpperCase();
-        
         document.getElementById('current-day-label').innerText = [i18n[currentLang].today, i18n[currentLang].tomorrow, i18n[currentLang].d_after][dayOffset];
         const scroll = document.getElementById('hourlyAxis');
         scroll.innerHTML = '';
@@ -157,8 +220,7 @@
         }
         const focusData = displayList[0];
         
-        // 重要修复：在这里调用 setBackground，背景将随日期同步更新
-        setBackground(focusData.weather[0].main, focusData.weather[0].description);
+        setBackground(focusData.weather[0].main, focusData.weather[0].description, focusData.weather[0].id);
 
         const temp = Math.round(focusData.main.temp);
         const uvValue = Math.max(1, Math.min(11, Math.floor(temp / 4) + (focusData.weather[0].main === 'Clear' ? 2 : 0)));
@@ -182,7 +244,7 @@
 
         displayList.forEach((item, idx) => {
             const time = item.dt_txt.split(' ')[1].substring(0, 5);
-            scroll.innerHTML += `<div class="hour-item ${idx===0?'active':''}" onclick="updateDetailFromHour(${weatherData.list.indexOf(item)})">
+            scroll.innerHTML += `<div class="hour-item ${idx===0?'active':''}">
                 <div class="hour-time">${time}</div>
                 <img src="https://openweathermap.org/img/wn/${item.weather[0].icon}.png" width="35">
                 <div class="hour-temp">${Math.round(item.main.temp)}°</div>
@@ -195,35 +257,38 @@
         if(weatherData) updateDisplay();
     }
 
-    function setBackground(main, description) {
+    function setBackground(main, description, id) {
         const wrapper = document.getElementById('bg-wrapper');
         wrapper.innerHTML = '';
         const body = document.body;
-        const mainLower = main.toLowerCase();
-        const descLower = description.toLowerCase();
         
-        const isRainy = mainLower.includes('rain') || descLower.includes('rain') || descLower.includes('drizzle');
-        const isSnowy = mainLower.includes('snow') || descLower.includes('snow') || descLower.includes('sleet');
-
         if (main === 'Clear') {
             body.style.backgroundColor = "#1a8fff";
             const s = document.createElement('div'); s.className = 'sun-glow'; wrapper.appendChild(s);
-        } else if (isSnowy) {
-            // 区分点：雪天背景改为更冷的“深海军蓝”，增加白色雪花数量
+        } else if (main === 'Snow') {
             body.style.backgroundColor = "#1e2732"; 
-            for(let i=0; i<65; i++) {
+            let count = 80; let speed = 5; let size = 5;
+            if (id === 602 || id === 622) { count = 250; speed = 2.5; size = 9; }
+            else if (id === 600 || id === 620) { count = 35; speed = 10; size = 3; }
+
+            for(let i=0; i<count; i++) {
                 let s = document.createElement('div'); s.className = 'snow';
                 s.style.left = Math.random()*100+'vw';
-                s.style.width = s.style.height = (2+Math.random()*4)+'px';
-                s.style.animationDuration = (3+Math.random()*4)+'s';
-                s.style.animationDelay = Math.random()*5+'s';
+                s.style.width = s.style.height = (Math.random()*size + 2)+'px';
+                s.style.animationDuration = (speed + Math.random()*speed)+'s';
                 wrapper.appendChild(s);
             }
-        } else if (isRainy) {
+        } else if (main === 'Rain' || main === 'Drizzle') {
             body.style.backgroundColor = "#3d4e5f";
-            for(let i=0; i<60; i++) {
+            let count = 100; let speed = 0.7; let width = 2;
+            if (id >= 502 && id <= 504) { count = 300; speed = 0.35; width = 4; }
+            else if (id === 500 || main === 'Drizzle') { count = 40; speed = 1.5; width = 1; }
+            
+            for(let i=0; i<count; i++) {
                 let d = document.createElement('div'); d.className = 'rain';
-                d.style.left = Math.random()*100+'vw'; d.style.animationDuration = (0.5+Math.random())+'s';
+                d.style.left = Math.random()*100+'vw'; 
+                d.style.width = width + 'px';
+                d.style.animationDuration = (speed + Math.random()*speed/2)+'s';
                 wrapper.appendChild(d);
             }
         } else {
