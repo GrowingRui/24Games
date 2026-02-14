@@ -14,6 +14,8 @@ To access the game sudoku please click here -> https://growingrui.github.io/brai
 
 To access the game Five in a Row please click here -> https://growingrui.github.io/brainstorming/Five-in-a-Row
 
+To access the weather app What2wear please click here -> https://growingrui.github.io/brainstorming/What2Wear
+
 ## About
 
 This project is intended for anyone who enjoys **brain-training, fun math challenges, and logic puzzles**. New games will be added regularly, making this repository a growing hub for puzzle enthusiasts.
