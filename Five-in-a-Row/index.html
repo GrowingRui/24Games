@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gomoku Master AI - 2026 Edition</title>
+    <style>
+        :root {
+            --bg-grad: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            --board-color: #d4a373;
+            --text-light: #f8fafc;
+            --accent: #38bdf8;
+            --danger: #f43f5e;
+        }
+
+        body {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: var(--bg-grad);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            color: var(--text-light);
+            overflow: hidden;
+        }
+
+        /* Background Decoration */
+        body::before {
+            content: "";
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: -1;
+            animation: move 100s linear infinite;
+        }
+
+        @keyframes move { from { transform: translate(0,0); } to { transform: translate(-50px, -50px); } }
+
+        /* Overlays */
+        #menu, #score-screen, #game-over-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .hidden { display: none !important; }
+
+        h1 { font-size: 3rem; margin-bottom: 2rem; letter-spacing: -1px; background: linear-gradient(to right, #fff, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        .btn {
+            padding: 14px 32px;
+            margin: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            background: rgba(255,255,255,0.05);
+            color: white;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 260px;
+            text-align: center;
+        }
+
+        .btn:hover { background: var(--accent); color: #000; transform: translateY(-2px); box-shadow: 0 10px 20px rgba(56, 189, 248, 0.2); }
+        .btn-danger:hover { background: var(--danger); color: white; }
+
+        /* Game UI Symmetry */
+        #game-info {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            margin-bottom: 25px;
+            background: rgba(255,255,255,0.05);
+            padding: 15px 40px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            width: 520px;
+        }
+
+        .stat-box { 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 120px;
+        }
+
+        .stat-label { font-size: 11px; text-transform: uppercase; color: #94a3b8; margin-bottom: 6px; letter-spacing: 1px; }
+        .stat-value { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; text-align: center; }
+
+        canvas {
+            background-color: var(--board-color);
+            border-radius: 8px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            cursor: pointer;
+            border: 8px solid #8b5e34;
+        }
+
+        .game-controls { margin-top: 25px; display: flex; gap: 15px; justify-content: center; }
+
+        .modal-content { background: #1e293b; padding: 40px; border-radius: 24px; text-align: center; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+        #game-over-msg { font-size: 28px; margin-bottom: 25px; color: var(--accent); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div id="menu">
+        <h1>GOMOKU MASTER</h1>
+        <button class="btn" onclick="startGame('pvp')">Local PvP</button>
+        <button class="btn" onclick="startGame('pve-easy')">AI - Casual</button>
+        <button class="btn" onclick="startGame('pve-hard')">AI - Grandmaster</button>
+        <button class="btn" style="background: rgba(255,255,255,0.1);" onclick="toggleScore(true)">View Scores</button>
+    </div>
+
+    <div id="score-screen" class="hidden">
+        <div class="modal-content">
+            <h2>Career Stats</h2>
+            <div style="display: flex; justify-content: center; gap: 50px; margin: 30px 0;">
+                <div class="stat-box"><div class="stat-label">Player Wins</div><div class="stat-value" id="stat-p1">0</div></div>
+                <div class="stat-box"><div class="stat-label">AI/P2 Wins</div><div class="stat-value" id="stat-p2">0</div></div>
+            </div>
+            <button class="btn" onclick="toggleScore(false)">Back to Menu</button>
+            <button class="btn btn-danger" onclick="resetStats()" style="width: auto; padding: 10px 20px; font-size: 12px; margin-top: 20px;">Clear Data</button>
+        </div>
+    </div>
+
+    <div id="game-over-overlay" class="hidden">
+        <div class="modal-content">
+            <div id="game-over-msg">Game Over!</div>
+            <button class="btn" onclick="restartFromOverlay()">Play Again</button>
+            <button class="btn" style="background: #475569;" onclick="exitToMenu()">Back to Menu</button>
+        </div>
+    </div>
+
+    <div id="game-info">
+        <div class="stat-box"><div class="stat-label">Time Left</div><div class="stat-value" id="timer">10:00</div></div>
+        <div class="stat-box"><div class="stat-label">Turn</div><div class="stat-value" id="turn-display" style="color: var(--accent);">Black</div></div>
+        <div class="stat-box"><div class="stat-label">Score</div><div class="stat-value" id="score-display">0 - 0</div></div>
+    </div>
+
+    <canvas id="board" width="600" height="600"></canvas>
+
+    <div class="game-controls">
+        <button class="btn" style="width: 130px;" onclick="undoMove()">Undo</button>
+        <button class="btn btn-danger" style="width: 130px;" onclick="surrender()">Surrender</button>
+        <button class="btn" style="width: 130px; background: #475569;" onclick="exitToMenu()">Exit</button>
+    </div>
+
+<script>
+    const canvas = document.getElementById('board');
+    const ctx = canvas.getContext('2d');
+    const timerDisplay = document.getElementById('timer');
+    const turnDisplay = document.getElementById('turn-display');
+    const scoreDisplay = document.getElementById('score-display');
+    const gameOverOverlay = document.getElementById('game-over-overlay');
+    const gameOverMsg = document.getElementById('game-over-msg');
+    
+    const SIZE = 15;
+    const PADDING = 40;
+    const CELL = (canvas.width - PADDING * 2) / (SIZE - 1);
+    
+    let board = [];
+    let moveHistory = [];
+    let currentPlayer = 1;
+    let gameMode = 'pvp';
+    let gameOver = false;
+    let isProcessing = false;
+    let timeLeft = 600;
+    let timerInterval = null;
+    let scores = JSON.parse(localStorage.getItem('gomoku_scores')) || { p1: 0, p2: 0 };
+
+    function initBoard() {
+        board = Array.from({ length: SIZE }, () => Array(SIZE).fill(0));
+        moveHistory = [];
+        currentPlayer = 1;
+        gameOver = false;
+        isProcessing = false;
+        gameOverOverlay.classList.add('hidden');
+        updateScoreDisplay();
+        startTimer();
+    }
+
+    function startTimer() {
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            if (timeLeft <= 0) {
+                endGame(3 - currentPlayer, "Time's up!");
+                return;
+            }
+            timeLeft--;
+            const mins = Math.floor(timeLeft / 60);
+            const secs = timeLeft % 60;
+            timerDisplay.innerText = `${mins}:${secs.toString().padStart(2, '0')}`;
+        }, 1000);
+    }
+
+    function drawBoard() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = "rgba(0,0,0,0.3)";
+        ctx.lineWidth = 1;
+        for (let i = 0; i < SIZE; i++) {
+            ctx.beginPath(); ctx.moveTo(PADDING, PADDING + i * CELL); ctx.lineTo(canvas.width - PADDING, PADDING + i * CELL); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(PADDING + i * CELL, PADDING); ctx.lineTo(PADDING + i * CELL, canvas.height - PADDING); ctx.stroke();
+        }
+        [3, 7, 11].forEach(r => [3, 7, 11].forEach(c => {
+            ctx.beginPath(); ctx.arc(PADDING + c * CELL, PADDING + r * CELL, 4, 0, Math.PI*2); ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fill();
+        }));
+
+        for (let r = 0; r < SIZE; r++) {
+            for (let c = 0; c < SIZE; c++) {
+                if (board[r][c] !== 0) {
+                    const x = PADDING + c * CELL, y = PADDING + r * CELL;
+                    ctx.beginPath(); ctx.arc(x, y, CELL * 0.42, 0, Math.PI * 2);
+                    const grad = ctx.createRadialGradient(x-3, y-3, 2, x, y, CELL*0.4);
+                    if (board[r][c] === 1) { grad.addColorStop(0, '#444'); grad.addColorStop(1, '#000'); }
+                    else { grad.addColorStop(0, '#fff'); grad.addColorStop(1, '#d1d1d1'); }
+                    ctx.fillStyle = grad; ctx.fill();
+                }
+            }
+        }
+    }
+
+    function makeMove(r, c) {
+        if (board[r][c] !== 0 || gameOver || isProcessing) return;
+        
+        isProcessing = true;
+        board[r][c] = currentPlayer;
+        moveHistory.push({r, c, player: currentPlayer});
+        
+        drawBoard();
+
+        // CHECK WIN DELAY: 1000ms (1 second)
+        setTimeout(() => {
+            if (checkWin(r, c, currentPlayer)) {
+                endGame(currentPlayer);
+            } else {
+                currentPlayer = 3 - currentPlayer;
+                updateTurnUI();
+                isProcessing = false;
+                if (!gameOver && currentPlayer === 2 && gameMode.startsWith('pve')) {
+                    setTimeout(aiMove, 600);
+                }
+            }
+        }, 1000); 
+    }
+
+    function updateTurnUI() {
+        turnDisplay.innerText = currentPlayer === 1 ? "Black" : "White";
+        turnDisplay.style.color = currentPlayer === 1 ? "var(--accent)" : "#fff";
+    }
+
+    function checkWin(r, c, p) {
+        const dirs = [[1,0], [0,1], [1,1], [1,-1]];
+        for (let [dr, dc] of dirs) {
+            let count = 1;
+            for(let i=1; i<5; i++){
+                let nr=r+dr*i, nc=c+dc*i;
+                if(nr>=0 && nr<SIZE && nc>=0 && nc<SIZE && board[nr][nc]===p) count++; else break;
+            }
+            for(let i=1; i<5; i++){
+                let nr=r-dr*i, nc=c-dc*i;
+                if(nr>=0 && nr<SIZE && nc>=0 && nc<SIZE && board[nr][nc]===p) count++; else break;
+            }
+            if(count >= 5) return true;
+        }
+        return false;
+    }
+
+    function aiMove() {
+        if (gameOver) return;
+        let best = -1, move = null;
+        for(let r=0; r<SIZE; r++) {
+            for(let c=0; c<SIZE; c++) {
+                if(board[r][c] === 0) {
+                    let score = Math.random() * 5;
+                    score += evaluate(r, c, 2) * (gameMode==='pve-hard'?2.5:1) + evaluate(r, c, 1) * 1.5;
+                    if(score > best) { best = score; move = {r, c}; }
+                }
+            }
+        }
+        if(move) makeMove(move.r, move.c);
+    }
+
+    function evaluate(r, c, p) {
+        let score = 0;
+        const dirs = [[1,0], [0,1], [1,1], [1,-1]];
+        for (let [dr, dc] of dirs) {
+            let count = 0;
+            for(let i=1; i<5; i++) {
+                let nr=r+dr*i, nc=c+dc*i;
+                if(nr>=0 && nr<SIZE && nc>=0 && nc<SIZE && board[nr][nc]===p) count++; else break;
+            }
+            score += Math.pow(10, count);
+        }
+        return score;
+    }
+
+    function undoMove() {
+        if (gameOver || moveHistory.length === 0 || isProcessing) return;
+        if (gameMode.startsWith('pve')) {
+            if (currentPlayer === 1) {
+                moveHistory.pop(); moveHistory.pop();
+            } else return;
+        } else {
+            moveHistory.pop();
+            currentPlayer = 3 - currentPlayer;
+        }
+        board = Array.from({ length: SIZE }, () => Array(SIZE).fill(0));
+        moveHistory.forEach(m => board[m.r][m.c] = m.player);
+        updateTurnUI();
+        drawBoard();
+    }
+
+    function surrender() {
+        if(gameOver || isProcessing) return;
+        endGame(3 - currentPlayer, "Surrendered!");
+    }
+
+    function endGame(winner, msg = "") {
+        gameOver = true;
+        isProcessing = false;
+        clearInterval(timerInterval);
+        if(winner === 1) scores.p1++; else scores.p2++;
+        localStorage.setItem('gomoku_scores', JSON.stringify(scores));
+        updateScoreDisplay();
+        
+        gameOverMsg.innerText = winner === 1 ? "Black Wins!" : "White Wins!";
+        if(msg) gameOverMsg.innerText = msg;
+        gameOverOverlay.classList.remove('hidden');
+    }
+
+    function restartFromOverlay() {
+        initBoard();
+        drawBoard();
+    }
+
+    function updateScoreDisplay() {
+        scoreDisplay.innerText = `${scores.p1} - ${scores.p2}`;
+        document.getElementById('stat-p1').innerText = scores.p1;
+        document.getElementById('stat-p2').innerText = scores.p2;
+    }
+
+    function startGame(mode) {
+        gameMode = mode;
+        document.getElementById('menu').classList.add('hidden');
+        initBoard();
+        drawBoard();
+    }
+
+    function exitToMenu() {
+        clearInterval(timerInterval);
+        gameOverOverlay.classList.add('hidden');
+        document.getElementById('menu').classList.remove('hidden');
+    }
+
+    function toggleScore(show) {
+        document.getElementById('score-screen').classList.toggle('hidden', !show);
+        updateScoreDisplay();
+    }
+
+    function resetStats() {
+        if(confirm("Reset all scores?")) {
+            scores = {p1: 0, p2: 0}; localStorage.setItem('gomoku_scores', JSON.stringify(scores)); updateScoreDisplay();
+        }
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+        if (gameOver || isProcessing || (currentPlayer === 2 && gameMode.startsWith('pve'))) return;
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left - PADDING, y = e.clientY - rect.top - PADDING;
+        const c = Math.round(x / CELL), r = Math.round(y / CELL);
+        if (r >= 0 && r < SIZE && c >= 0 && c < SIZE) makeMove(r, c);
+    });
+
+    updateScoreDisplay();
+</script>
+</body>
+</html>
