@@ -40,6 +40,18 @@
 
         @keyframes move { from { transform: translate(0,0); } to { transform: translate(-50px, -50px); } }
 
+        /* Author Info - Bottom Left (Always on top) */
+        .author-info {
+            position: fixed;
+            bottom: 15px;
+            left: 20px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.4);
+            z-index: 200; /* Increased to stay above all overlays */
+            pointer-events: none;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
         /* Overlays */
         #menu, #score-screen, #game-over-overlay {
             position: absolute;
@@ -115,6 +127,10 @@
 </head>
 <body>
 
+    <div class="author-info">
+        Author: XIA RUI DONG | Contact: xiarui091@gmail.com
+    </div>
+
     <div id="menu">
         <h1>GOMOKU MASTER</h1>
         <button class="btn" onclick="startGame('pvp')">Local PvP</button>
@@ -155,10 +171,6 @@
         <button class="btn" style="width: 130px;" onclick="undoMove()">Undo</button>
         <button class="btn btn-danger" style="width: 130px;" onclick="surrender()">Surrender</button>
         <button class="btn" style="width: 130px; background: #475569;" onclick="exitToMenu()">Exit</button>
-    </div>
-
-    <div class="footer">
-       Author: XIA RUI DONG | Contact: xiarui091@gmail.com
     </div>
 
 <script>
@@ -244,7 +256,6 @@
         
         drawBoard();
 
-        // CHECK WIN DELAY: 1000ms (1 second)
         setTimeout(() => {
             if (checkWin(r, c, currentPlayer)) {
                 endGame(currentPlayer);
