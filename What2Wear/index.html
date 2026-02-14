@@ -3,198 +3,246 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>What2Wear - Smart Wardrobe Assistant</title>
+    <title>What2Wear - Smart weather Assistant</title>
     <style>
         :root {
-            --glass-bg: rgba(255, 255, 255, 0.2);
-            --glass-border: rgba(255, 255, 255, 0.4);
-            --text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            --glass: rgba(255, 255, 255, 0.18);
+            --border: rgba(255, 255, 255, 0.35);
         }
 
-        body {
-            margin: 0; padding: 0;
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            display: flex; justify-content: center; align-items: center;
-            min-height: 100vh;
-            transition: background 1s ease;
-            color: white; text-shadow: var(--text-shadow);
-            overflow-x: hidden;
+        * { box-sizing: border-box; }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            color: white; overflow: hidden;
+            background-color: #2c3e50;
         }
 
-        /* 背景状态 */
-        .weather-clear { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
-        .weather-rain { background: linear-gradient(135deg, #485563 0%, #29323c 100%); }
-        .weather-clouds { background: linear-gradient(135deg, #bdc3c7 0%, #2c3e50 100%); }
+        /* 背景层 */
+        #bg-wrapper { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; transition: background 1.5s ease; }
+        .sun-glow { position: absolute; top: -10%; right: -10%; width: 70vw; height: 70vw; background: radial-gradient(circle, rgba(255,255,150,0.3) 0%, rgba(255,255,255,0) 70%); animation: pulse 6s infinite alternate; }
+        @keyframes pulse { from { opacity: 0.4; transform: scale(1); } to { opacity: 0.7; transform: scale(1.1); } }
+        .rain { position: absolute; background: rgba(255,255,255,0.4); width: 2px; height: 15px; top: -20px; animation: fall linear infinite; }
+        @keyframes fall { to { transform: translateY(110vh); } }
+        .cloud { position: absolute; background: rgba(255,255,255,0.4); filter: blur(40px); border-radius: 50%; animation: drift linear infinite; }
+        @keyframes drift { from { left: -200px; } to { left: 100vw; } }
 
-        /* 顶部工具栏：适配手机 */
-        .header-tools {
-            position: absolute; top: 20px; right: 20px;
-            z-index: 100;
-        }
+        /* 内容层 */
+        #app-content { position: relative; z-index: 10; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
 
-        /* 修复后的语言选择器 */
-        .lang-selector {
-            background: rgba(0, 0, 0, 0.3); /* 深色背景确保白色文字可见 */
-            color: white;
-            border: 1.5px solid var(--glass-border);
-            padding: 8px 30px 8px 15px;
-            border-radius: 20px;
-            font-size: 14px;
-            cursor: pointer;
-            outline: none;
-            appearance: none;
-            -webkit-appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 10px center;
-        }
-
-        .lang-selector option { background: #333; color: white; }
-
-        /* 主容器适配 */
         .container {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            padding: 30px; border-radius: 35px;
-            text-align: center; width: 85%; max-width: 380px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.15);
-            border: 1px solid var(--glass-border);
-            margin: 20px;
+            background: var(--glass); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+            padding: 35px; border-radius: 40px; text-align: center; width: 100%; max-width: 450px;
+            box-shadow: 0 25px 70px rgba(0,0,0,0.4); border: 1px solid var(--border);
         }
 
-        h1 { margin: 0; font-size: 1.8rem; letter-spacing: 2px; font-weight: 800; }
-        #location { font-size: 1.1rem; opacity: 0.9; margin: 10px 0 5px 0; }
-        .temp { font-size: 4rem; font-weight: 200; margin: 5px 0; }
+        .header-tools { width: 100%; display: flex; justify-content: space-between; margin-bottom: 25px; gap: 10px; }
         
-        #clothing-img {
-            width: 100%; max-width: 200px; height: 200px;
-            object-fit: cover; border-radius: 20px;
-            margin: 15px 0;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            border: 2px solid rgba(255,255,255,0.3);
+        .search-box {
+            flex-grow: 1; background: rgba(0,0,0,0.3); border: 1px solid var(--border);
+            border-radius: 20px; padding: 10px 18px; color: white; outline: none; transition: 0.3s; font-size: 14px;
+        }
+        .search-box:focus { background: rgba(0,0,0,0.5); border-color: white; }
+
+        .lang-selector {
+            background: rgba(0,0,0,0.5); color: white; border: 1px solid var(--border);
+            padding: 8px 12px; border-radius: 20px; outline: none; cursor: pointer;
         }
 
-        .advice-text { font-size: 1.05rem; line-height: 1.4; min-height: 3em; }
+        h1 { margin: 0; font-size: 1.8rem; letter-spacing: 3px; font-weight: 900; }
+        .temp { font-size: 5.5rem; font-weight: 100; margin: 5px 0; }
+        #location { font-size: 1.2rem; font-weight: 600; margin-top: 10px; }
+        #weather-desc { font-size: 1.1rem; opacity: 0.8; margin-bottom: 20px; text-transform: capitalize; }
 
-        /* 作者信息栏 */
-        .footer-info {
-            position: absolute; bottom: 15px; right: 20px;
-            font-size: 12px; opacity: 0.7; text-align: right;
-            line-height: 1.6; pointer-events: none;
+        /* 建议框：加强对比度 */
+        .advice-box { 
+            background: rgba(0,0,0,0.2); 
+            border-radius: 25px; 
+            padding: 20px; 
+            font-size: 1.1rem; 
+            line-height: 1.7; 
+            min-height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-shadow: none;
         }
 
-        /* 响应式调整 (手机和平板) */
-        @media (max-width: 480px) {
-            .container { padding: 25px; }
-            h1 { font-size: 1.5rem; }
-            .temp { font-size: 3.5rem; }
-            #clothing-img { max-width: 180px; height: 180px; }
-            .header-tools { top: 15px; right: 15px; }
-            .footer-info { bottom: 10px; width: 100%; text-align: center; right: 0; }
-        }
+        .footer-info { position: absolute; bottom: 15px; font-size: 10px; opacity: 0.6; width: 100%; text-align: center; }
+
+        @media (max-width: 480px) { .temp { font-size: 4rem; } .container { padding: 25px; } }
     </style>
 </head>
-<body class="weather-clear">
+<body>
 
-    <div class="header-tools">
-        <select class="lang-selector" id="langSelect" onchange="changeLanguage()">
-            <option value="zh_cn">简体中文</option>
-            <option value="en">English</option>
-            <option value="es">Español</option>
-            <option value="de">Deutsch</option>
-        </select>
-    </div>
+    <div id="bg-wrapper"></div>
 
-    <div class="container">
-        <h1>What2Wear</h1>
-        <div id="location">---</div>
-        <div id="weather-desc">...</div>
-        <div class="temp"><span id="temp-val">--</span>°C</div>
-        
-        <img id="clothing-img" src="https://via.placeholder.com/220/ffffff/cccccc?text=What2Wear" alt="Fashion">
-        
-        <div class="advice-text" id="advice">Detecting location...</div>
-    </div>
+    <div id="app-content">
+        <div class="container">
+            <div class="header-tools">
+                <input type="text" id="cityInput" class="search-box" placeholder="Buscar ciudad...">
+                <select class="lang-selector" id="langSelect" onchange="changeLanguage()">
+                    <option value="zh_cn">CN</option>
+                    <option value="en">EN</option>
+                    <option value="es">ES</option>
+                    <option value="de">DE</option>
+                </select>
+            </div>
 
-    <div class="footer-info">
-        Author: XIA RUI DONG<br>
-        Contact: xiarui091@gmail.com
+            <h1 id="brand-name">What2Wear</h1>
+            <div id="location">Detecting...</div>
+            <div id="weather-desc">---</div>
+            <div class="temp"><span id="temp-val">--</span>°C</div>
+            
+            <div class="advice-box" id="advice">...</div>
+        </div>
+
+        <div class="footer-info">
+            AUTHOR: XIA RUI DONG | CONTACT: xiarui091@gmail.com
+        </div>
     </div>
 
 <script>
     const API_KEY = '2a7f5c65709314cf776fb9958f88ceda';
     let currentLang = 'zh_cn';
-    let lastCoords = null;
+    let lastQuery = null;
 
     const i18n = {
-        zh_cn: { loading: "正在获取位置...", errLoc: "无法获取位置", hot: "烈日炎炎，穿短袖背心最清爽！", warm: "气候宜人，穿一件卫衣或衬衫吧。", cool: "天气转凉，记得加件外套或风衣。", cold: "天寒地冻，羽绒服才是本体！", apiErr: "API 尚未激活，请稍后再试" },
-        en: { loading: "Locating...", errLoc: "Location Denied", hot: "It's hot! T-shirts and shorts are best.", warm: "Comfortable day. A hoodie or shirt works fine.", cool: "Getting chilly. Put on a jacket.", cold: "Freezing! Grab your heavy down coat.", apiErr: "API Key activating, please wait" },
-        es: { loading: "Localizando...", errLoc: "Ubicación Denegada", hot: "¡Hace calor! Camisetas y shorts.", warm: "Día agradable. Una sudadera está bien.", cool: "Hace fresco. Ponte una chaqueta.", cold: "¡Mucho frío! Usa un abrigo pesado.", apiErr: "API activándose, espere" },
-        de: { loading: "Ortung...", errLoc: "Standort abgelehnt", hot: "Heiß! T-Shirts und Shorts sind am besten.", warm: "Angenehm. Ein Hoodie oder Hemd reicht.", cool: "Kühl. Zieh eine Jacke an.", cold: "Eisig! Schnapp dir deinen Daunenmantel.", apiErr: "API wird aktiviert, bitte warten" }
+        zh_cn: { 
+            search: "搜索城市...", loading: "同步中...", 
+            hot: "🔥 酷热警报：建议穿透气的背心、短裤或超薄连衣裙。户外活动必须佩戴防紫外线墨镜及遮阳帽，请每小时补充水分。",
+            warm: "☀️ 气候炎热：适合棉质T恤、短裙或凉爽的运动装。轻便的运动鞋或凉鞋是最佳选择，适合露天散步。",
+            cool: "🍃 气候宜人：理想的叠穿天气。建议长袖T恤配轻薄衬衫，或者一件卫衣加休闲裤，应付早晚温差。",
+            chilly: "🌤️ 微凉感：建议加一层防风外套、薄风衣或针织开衫。保护好颈部和膝盖，适合多层次搭配。",
+            cold: "🧥 寒冷袭击：请换上厚毛呢大衣、轻便羽绒服或羊绒衫。建议搭配厚袜子，保持足部温暖非常关键。",
+            freezing: "❄️ 严寒警告：羽绒服、保暖内衣是标准配备。出门请务必戴好手套、围巾和护耳帽。尽量减少长时间户外逗留。",
+            rain: " ☔ 今日有雨：请携带坚固的雨伞，建议穿着防水面料的外套和防滑深色鞋子。" 
+        },
+        en: { 
+            search: "Search city...", loading: "Syncing...", 
+            hot: "🔥 Heat Alert: Wear breathable tank tops, shorts, or light dresses. UV-protection sunglasses and hats are essential. Hydrate every hour.",
+            warm: "☀️ Warm Weather: Cotton T-shirts, skirts, or light sportswear are perfect. Lightweight sneakers or sandals are best for outdoor walks.",
+            cool: "🍃 Nice & Breezy: Ideal for layering. A long-sleeve tee with a light shirt or a hoodie with chinos is perfect for changing temps.",
+            chilly: "🌤️ Feeling Chilly: A windbreaker, light trench coat, or cardigan is recommended. Great for a stylish multi-layered look.",
+            cold: "🧥 Cold Day: Switch to a heavy wool coat, light down jacket, or cashmere sweater. Warm socks are key to staying cozy.",
+            freezing: "❄️ Freezing Alert: Heavy puffer jackets and thermal wear are required. Don't leave without gloves, a scarf, and a beanie.",
+            rain: " ☔ Raining Today: Carry a sturdy umbrella. Waterproof outers and non-slip dark shoes are highly recommended."
+        },
+        es: { 
+            search: "Buscar ciudad...", loading: "Sincronizando...", 
+            hot: "🔥 Calor Extremo: Usa camisetas sin mangas y shorts. Gafas de sol con protección UV y gorras son esenciales. Hidrátate bien.",
+            warm: "☀️ Clima Cálido: Camisetas de algodón y faldas son perfectas. Tenis ligeros o sandalias para pasear.",
+            cool: "🍃 Agradable: Ideal para capas. Camiseta de manga larga con una camisa ligera o una sudadera con pantalones cómodos.",
+            chilly: "🌤️ Algo Fresco: Se recomienda un cortavientos o una chaqueta ligera. Protege tu cuello del viento.",
+            cold: "🧥 Día Frío: Usa un abrigo de lana grueso o una chaqueta de plumón ligera. Calcetines calientes son clave.",
+            freezing: "❄️ ¡Gélido!: Chaquetas de plumón pesadas y ropa térmica. No olvides guantes, bufanda y un gorro.",
+            rain: " ☔ Lluvia hoy: Trae un paraguas resistente. Se recomiendan chaquetas impermeables y zapatos antideslizantes."
+        },
+        de: { 
+            search: "Stadt suchen...", loading: "Lädt...", 
+            hot: "🔥 Hitzealarm: Luftige Tops und Shorts. UV-Sonnenbrillen und Hüte sind wichtig. Trinken Sie stündlich Wasser.",
+            warm: "☀️ Warmes Wetter: Baumwoll-T-Shirts und Röcke sind ideal. Leichte Sneaker für Spaziergänge.",
+            cool: "🍃 Angenehm: Perfekt für den Zwiebellook. Langarmshirt mit Hemd oder ein Hoodie sind super.",
+            chilly: "🌤️ Etwas Kühl: Windbreaker oder eine leichte Jacke werden empfohlen. Gut für mehrlagige Outfits.",
+            cold: "🧥 Kalt: Wechseln Sie zu Wollmantel oder Daunenjacke. Warme Socken sind sehr wichtig.",
+            freezing: "❄️ Frostig: Schwere Daunenjacken und Thermounterwäsche. Handschuhe, Schal und Mütze sind Pflicht.",
+            rain: " ☔ Regen: Stabilen Regenschirm mitnehmen. Wasserfeste Kleidung und rutschfeste Schuhe empfohlen."
+        }
     };
 
     window.onload = () => {
-        updateStaticText();
-        startApp();
+        updatePlaceholder();
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(p => fetchWeather(p.coords.latitude, p.coords.longitude), () => searchCity('Madrid'));
+        } else {
+            searchCity('Madrid');
+        }
     };
 
-    function startApp() {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (pos) => { lastCoords = pos; getWeather(pos); },
-                () => { document.getElementById('location').innerText = i18n[currentLang].errLoc; }
-            );
-        }
+    document.getElementById('cityInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') searchCity(e.target.value);
+    });
+
+    async function searchCity(city) {
+        if (!city) return;
+        try {
+            const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric&lang=${currentLang}`);
+            const data = await res.json();
+            if (data.cod !== 200) throw new Error();
+            lastQuery = { type: 'name', value: city };
+            updateUI(data);
+        } catch (e) { alert("City not found"); }
     }
 
-    async function getWeather(position) {
-        const { latitude: lat, longitude: lon } = position.coords;
+    async function fetchWeather(lat, lon) {
         try {
             const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=${currentLang}`);
-            if (!res.ok) throw new Error();
             const data = await res.json();
+            lastQuery = { type: 'coord', lat, lon };
             updateUI(data);
-        } catch (e) {
-            document.getElementById('location').innerText = i18n[currentLang].apiErr;
-        }
+        } catch (e) { console.log("API Error"); }
     }
 
     function updateUI(data) {
         const temp = Math.round(data.main.temp);
-        const condition = data.weather[0].main;
-        
-        document.getElementById('location').innerText = data.name;
+        const main = data.weather[0].main;
+        const isRain = main.includes('Rain') || main === 'Drizzle';
+
+        document.getElementById('location').innerText = data.name.toUpperCase();
         document.getElementById('temp-val').innerText = temp;
         document.getElementById('weather-desc').innerText = data.weather[0].description;
 
-        const b = document.body;
-        b.className = '';
-        if (condition === 'Clear') b.classList.add('weather-clear');
-        else if (condition.includes('Rain') || condition === 'Drizzle') b.classList.add('weather-rain');
-        else b.classList.add('weather-clouds');
+        setBackground(main);
 
-        let adviceKey = temp >= 28 ? "hot" : temp >= 18 ? "warm" : temp >= 10 ? "cool" : "cold";
-        const imgMap = {
-            hot: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400",
-            warm: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=400",
-            cool: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=400",
-            cold: "https://images.unsplash.com/photo-1539533377285-a41cc5e94189?w=400"
-        };
+        // 细分建议逻辑
+        let key = "";
+        if (temp >= 33) key = 'hot';
+        else if (temp >= 25) key = 'warm';
+        else if (temp >= 18) key = 'cool';
+        else if (temp >= 10) key = 'chilly';
+        else if (temp >= 0) key = 'cold';
+        else key = 'freezing';
 
-        document.getElementById('advice').innerText = i18n[currentLang][adviceKey];
-        document.getElementById('clothing-img').src = imgMap[adviceKey];
+        let adviceStr = i18n[currentLang][key] + (isRain ? i18n[currentLang].rain : "");
+        document.getElementById('advice').innerText = adviceStr;
     }
 
-    function updateStaticText() {
-        document.getElementById('advice').innerText = i18n[currentLang].loading;
+    function setBackground(main) {
+        const wrapper = document.getElementById('bg-wrapper');
+        const body = document.body;
+        wrapper.innerHTML = '';
+        if (main === 'Clear') {
+            body.style.backgroundColor = "#1a8fff";
+            const s = document.createElement('div'); s.className = 'sun-glow'; wrapper.appendChild(s);
+        } else if (main.includes('Rain')) {
+            body.style.backgroundColor = "#3d4e5f";
+            for(let i=0; i<60; i++) {
+                let d = document.createElement('div'); d.className = 'rain';
+                d.style.left = Math.random()*100+'vw'; d.style.animationDuration = (0.5+Math.random())+'s';
+                wrapper.appendChild(d);
+            }
+        } else {
+            body.style.backgroundColor = "#607d8b";
+            for(let i=0; i<3; i++) {
+                let c = document.createElement('div'); c.className = 'cloud';
+                c.style.top = (20+i*20)+'vh'; c.style.width = '350px'; c.style.height = '180px';
+                c.style.animationDuration = (20+Math.random()*15)+'s'; wrapper.appendChild(c);
+            }
+        }
+    }
+
+    function updatePlaceholder() {
+        document.getElementById('cityInput').placeholder = i18n[currentLang].search;
     }
 
     function changeLanguage() {
         currentLang = document.getElementById('langSelect').value;
-        updateStaticText();
-        if (lastCoords) getWeather(lastCoords);
-        else startApp();
+        updatePlaceholder();
+        if (lastQuery) {
+            if (lastQuery.type === 'name') searchCity(lastQuery.value);
+            else fetchWeather(lastQuery.lat, lastQuery.lon);
+        }
     }
 </script>
 </body>
