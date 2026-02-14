@@ -12,6 +12,8 @@ To access the game 24 point please click here -> https://growingrui.github.io/br
 
 To access the game sudoku please click here -> https://growingrui.github.io/brainstorming/sudoku-game
 
+To access the game Five in a Row please click here -> https://growingrui.github.io/brainstorming/Five in a Row
+
 ## About
 
 This project is intended for anyone who enjoys **brain-training, fun math challenges, and logic puzzles**. New games will be added regularly, making this repository a growing hub for puzzle enthusiasts.
