@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>What2Wear - Stable Edition</title>
+    <title>What2Wear - Stable Fixed</title>
     <style>
         :root { 
             --glass: rgba(255, 255, 255, 0.15); 
@@ -11,7 +11,13 @@
             --bg-speed: 1.5s;
         }
         * { box-sizing: border-box; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: 'Segoe UI', system-ui, sans-serif; color: white; overflow: hidden; }
+        /* 修复：添加了默认背景色，防止加载前白屏 */
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            font-family: 'Segoe UI', system-ui, sans-serif; 
+            color: white; overflow: hidden; 
+            background-color: #2c3e50; 
+        }
         body.rtl { direction: rtl; }
         
         /* 动态背景层 */
@@ -56,7 +62,6 @@
             display: flex; justify-content: center; align-items: center; padding: 15px; 
         }
         
-        /* 容器去掉了浮动动画 */
         .container { 
             background: var(--glass); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); 
             padding: 25px; border-radius: 40px; text-align: center; width: 100%; max-width: 480px; 
@@ -193,7 +198,7 @@
             hot: "🔥 Hitze: Tragen Sie leichte Kleidung wie Tanktops und Shorts. Verwenden Sie Sonnencreme mit SPF 50+ und trinken Sie viel Wasser.",
             warm: "☀️ Warm: Baumwoll-T-Shirts und Röcke werden empfohlen. Halten Sie eine leichte Schicht für klimatisierte Räume bereit.",
             comfortable: "🍃 Angenehm: Ein Langarmshirt oder ein leichter Hoodie reicht aus. Bei ca. 23°C ist es sehr angenehm; keine Jacke nötig.",
-            chilly: "🌤️ Kühl: Ziehen Sie sich im Zwiebellook mit Windjacke oder leichtem Pullover an. Ach滕 Sie auf kühlere Temperaturen am Abend.",
+            chilly: "🌤️ Kühl: Ziehen Sie sich im Zwiebellook mit Windjacke oder leichtem Pullover an. Achten Sie auf kühlere Temperaturen am Abend.",
             cold: "🧥 Kalt: Ein Kaschmirpullover mit Wollmantel oder eine dicke Jacke wird empfohlen. Tragen Sie einen Schal zum Schutz des Halses.",
             freezing: "❄️ Eiskalt: Eine dicke Daunenjacke und Thermounterwäsche sind wichtig. Tragen Sie Handschuhe und Ohrenschützer.",
             rain: " ☔ Nehmen Sie einen Regenschirm mit und tragen Sie wasserfeste Schuhe, um trocken zu bleiben."
@@ -206,7 +211,7 @@
             chilly: "🌤️ Прохладно: Одевайтесь слоями — ветровка или лёгкий свитер подойдут. Учитывайте похолодание вечером.",
             cold: "🧥 Холодно: Рекомендуется кашемировый свитер с шерстяным пальто или тёплая куртка. Наденьте шарф для защиты шеи.",
             freezing: "❄️ Мороз: Тёплый пуховик и термобельё обязательны. Наденьте перчатки и тёплую шапку, чтобы избежать обморожения.",
-            rain: " ☔ Возьмите зонт и наденьте непромокаемую одевь, чтобы остаться сухим."
+            rain: " ☔ Возьмите зонт и наденьте непромокаемую обувь, чтобы остаться сухим."
         },
         ar: {
             today: "اليوم", tomorrow: "غداً", d_after: "بعد غد", search: "بحث عن مدينة...", uv: "مؤشر الأشعة فوق البنفسجية", aqi: "جودة الهواء", uv_low: "منخفض", uv_high: "استخدم واقي شمس", aqi_good: "هواء نقي", aqi_bad: "تلوث",
