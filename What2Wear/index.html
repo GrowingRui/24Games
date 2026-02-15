@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>What2Wear - Updated i18n Content</title>
+    <title>What2Wear - UV & AQI Color Bar</title>
     <style>
         :root { --glass: rgba(255, 255, 255, 0.15); --border: rgba(255, 255, 255, 0.25); }
         * { box-sizing: border-box; }
@@ -35,8 +35,11 @@
         .metric-title { font-size: 0.7rem; opacity: 0.8; margin-bottom: 2px; text-transform: uppercase; }
         .metric-value { font-size: 1.1rem; font-weight: bold; }
         .metric-desc { font-size: 0.65rem; margin-top: 5px; padding: 3px; border-radius: 6px; background: rgba(255,255,255,0.12); }
-        .aqi-bar-container { width: 100%; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; margin-top: 8px; overflow: hidden; }
-        #aqi-bar-fill { height: 100%; width: 0%; transition: 1s ease-in-out; border-radius: 2px; }
+        
+        /* 进度条样式 */
+        .bar-container { width: 100%; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+        .bar-fill { height: 100%; width: 0%; transition: 1s ease-in-out; border-radius: 2px; }
+        
         .temp { font-size: 4.5rem; font-weight: 100; margin: 0; }
         .advice-box { background: rgba(0,0,0,0.15); border-radius: 20px; padding: 18px; font-size: 0.85rem; line-height: 1.6; margin: 15px 0; min-height: 125px; text-align: left; }
         body.rtl .advice-box { text-align: right; }
@@ -79,12 +82,13 @@
                     <div class="metric-title" id="label-uv">UV Index</div>
                     <div class="metric-value" id="uv-val">--</div>
                     <div class="metric-desc" id="uv-info">--</div>
+                    <div class="bar-container"><div id="uv-bar-fill" class="bar-fill"></div></div>
                 </div>
                 <div class="metric-card">
                     <div class="metric-title" id="label-aqi">Air Quality</div>
                     <div class="metric-value" id="aqi-val">--</div>
                     <div class="metric-desc" id="aqi-info">--</div>
-                    <div class="aqi-bar-container"><div id="aqi-bar-fill"></div></div>
+                    <div class="bar-container"><div id="aqi-bar-fill" class="bar-fill"></div></div>
                 </div>
             </div>
             <div class="advice-box" id="advice">...</div>
@@ -100,7 +104,6 @@
     let currentAQI = 1;
     let dayOffset = 0; 
 
-    // 使用你提供的最新 i18n 配置
     const i18n = {
         zh_cn: {
             today: "今天", tomorrow: "明天", d_after: "后天", search: "搜索城市...", uv: "紫外线", aqi: "空气质量", uv_low: "低辐射", uv_high: "需防晒", aqi_good: "空气清新", aqi_bad: "污染警告",
@@ -139,7 +142,7 @@
             comfortable: "🍃 Agréable : Un t-shirt à manches longues ou un sweat léger suffit. À 23°C, c'est très confortable ; pas besoin de veste.",
             chilly: "🌤️ Frais : Superposez un coupe-vent ou un pull léger. Attention à la baisse de température en soirée.",
             cold: "🧥 Froid : Un pull en cachemire avec un manteau en laine est recommandé. Portez une écharpe pour protéger votre cou.",
-            freezing: "❄️ Gel : Une doudoune épaisse et des sous-vêtements thermiques sont indispensables. Portez des gants et des cache-oreilles.",
+            freezing: "❄️ Gel : Une doudoune épaisse et des sous-вêtements thermiques sont indispensables. Portez des gants et des cache-oreilles.",
             rain: " ☔ N'oubliez pas votre parapluie et portez des chaussures imperméables pour rester au sec."
         },
         de: {
@@ -234,10 +237,22 @@
         document.getElementById('uv-info').innerText = uvValue > 5 ? i18n[currentLang].uv_high : i18n[currentLang].uv_low;
         document.getElementById('aqi-info').innerText = currentAQI > 2 ? i18n[currentLang].aqi_bad : i18n[currentLang].aqi_good;
 
+        // AQI 进度条逻辑
         const aqiBar = document.getElementById('aqi-bar-fill');
-        const colors = ["#4ade80", "#a3e635", "#fde047", "#fb923c", "#ef4444"];
+        const aqiColors = ["#4ade80", "#a3e635", "#fde047", "#fb923c", "#ef4444"];
         aqiBar.style.width = (currentAQI * 20) + "%";
-        aqiBar.style.backgroundColor = colors[currentAQI - 1] || "#4ade80";
+        aqiBar.style.backgroundColor = aqiColors[currentAQI - 1] || "#4ade80";
+
+        // UV 进度条逻辑
+        const uvBar = document.getElementById('uv-bar-fill');
+        let uvColor = "#4ade80"; // 低 (0-2)
+        if (uvValue >= 11) uvColor = "#a855f7"; // 极强危险 (11+)
+        else if (uvValue >= 8) uvColor = "#ef4444"; // 极强 (8-10)
+        else if (uvValue >= 6) uvColor = "#fb923c"; // 高 (6-7)
+        else if (uvValue >= 3) uvColor = "#fde047"; // 中 (3-5)
+        
+        uvBar.style.width = Math.min(100, (uvValue / 11) * 100) + "%";
+        uvBar.style.backgroundColor = uvColor;
 
         let key = temp >= 32 ? 'hot' : temp >= 27 ? 'warm' : temp >= 20 ? 'comfortable' : temp >= 12 ? 'chilly' : temp >= 0 ? 'cold' : 'freezing';
         document.getElementById('advice').innerText = i18n[currentLang][key] + (focusData.weather[0].main.includes('Rain') ? i18n[currentLang].rain : "");
