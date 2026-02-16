@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Spaceship Adventure</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; font-family: Arial, sans-serif; touch-action: none; }
+        canvas { display: block; }
+        #ui {
+            position: absolute; top: 10px; left: 10px; color: white;
+            font-size: 20px; pointer-events: none; text-shadow: 2px 2px 4px #000;
+        }
+    </style>
+</head>
+<body>
+    <div id="ui">Score: <span id="score">0</span> |Spaceship Health: <span id="health">3</span></div>
+    <canvas id="gameCanvas"></canvas>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const scoreEl = document.getElementById('score');
+const healthEl = document.getElementById('health');
+
+// 游戏状态
+let score = 0;
+let health = 3;
+let gameOver = false;
+
+// 适配屏幕尺寸
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+// 玩家对象
+const player = {
+    x: canvas.width / 2,
+    y: canvas.height - 80,
+    w: 50,
+    h: 50,
+    color: '#00d2ff'
+};
+
+const bullets = [];
+const asteroids = [];
+
+// 控制逻辑 (鼠标 & 触摸)
+function handleMove(e) {
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    player.x = clientX - player.w / 2;
+}
+window.addEventListener('mousemove', handleMove);
+window.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    handleMove(e);
+}, { passive: false });
+
+// 自动射击
+setInterval(() => {
+    if (!gameOver) {
+        bullets.push({ x: player.x + player.w / 2 - 2, y: player.y, w: 4, h: 15 });
+    }
+}, 200);
+
+// 生成陨石
+function spawnAsteroid() {
+    const size = Math.random() * 40 + 20;
+    asteroids.push({
+        x: Math.random() * (canvas.width - size),
+        y: -size,
+        w: size,
+        h: size,
+        speed: Math.random() * 3 + 2
+    });
+    if (!gameOver) setTimeout(spawnAsteroid, 800);
+}
+spawnAsteroid();
+
+// 核心更新循环
+function update() {
+    if (gameOver) return;
+
+    // 更新子弹
+    bullets.forEach((b, i) => {
+        b.y -= 7;
+        if (b.y < 0) bullets.splice(i, 1);
+    });
+
+    // 更新陨石
+    asteroids.forEach((ast, i) => {
+        ast.y += ast.speed;
+
+        // 陨石飞出屏幕
+        if (ast.y > canvas.height) asteroids.splice(i, 1);
+
+        // 碰撞检测：子弹击中陨石
+        bullets.forEach((b, bi) => {
+            if (b.x < ast.x + ast.w && b.x + b.w > ast.x && b.y < ast.y + ast.h && b.y + b.h > ast.y) {
+                asteroids.splice(i, 1);
+                bullets.splice(bi, 1);
+                score += 10;
+                scoreEl.innerText = score;
+            }
+        });
+
+        // 碰撞检测：陨石撞击飞船
+        if (player.x < ast.x + ast.w && player.x + player.w > ast.x && player.y < ast.y + ast.h && player.y + player.h > ast.y) {
+            asteroids.splice(i, 1);
+            health--;
+            healthEl.innerText = health;
+            if (health <= 0) {
+                gameOver = true;
+                alert("Game Over! Final Score: " + score);
+                location.reload();
+            }
+        }
+    });
+}
+
+// 绘制图形
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 画飞船 (三角形)
+    ctx.fillStyle = player.color;
+    ctx.beginPath();
+    ctx.moveTo(player.x + player.w / 2, player.y);
+    ctx.lineTo(player.x, player.y + player.h);
+    ctx.lineTo(player.x + player.w, player.y + player.h);
+    ctx.fill();
+
+    // 画子弹
+    ctx.fillStyle = '#fff700';
+    bullets.forEach(b => ctx.fillRect(b.x, b.y, b.w, b.h));
+
+    // 画陨石
+    ctx.fillStyle = '#ff4d4d';
+    asteroids.forEach(ast => {
+        ctx.beginPath();
+        ctx.arc(ast.x + ast.w/2, ast.y + ast.h/2, ast.w/2, 0, Math.PI*2);
+        ctx.fill();
+    });
+
+    update();
+    requestAnimationFrame(draw);
+}
+
+draw();
+</script>
+</body>
+</html>
