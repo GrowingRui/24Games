@@ -14,7 +14,9 @@ To access the game sudoku please click here -> https://growingrui.github.io/brai
 
 To access the game Five in a Row please click here -> https://growingrui.github.io/brainstorming/Five-in-a-Row
 
-To access the weather app What2wear please click here -> https://growingrui.github.io/brainstorming/What2Wear  (Location services need to be enabled for this app to function properly.)
+To access the weather app What2wear please click here -> https://growingrui.github.io/brainstorming/What2Wear
+
+Please note: 📍 Location services need to be enabled for the app What2wear to function properly.
 
 ## About
 
