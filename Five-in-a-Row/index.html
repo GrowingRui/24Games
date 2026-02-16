@@ -40,14 +40,14 @@
 
         @keyframes move { from { transform: translate(0,0); } to { transform: translate(-50px, -50px); } }
 
-        /* Author Info - Bottom Left (Always on top) */
+        /* Author Info - Bottom Left */
         .author-info {
             position: fixed;
             bottom: 15px;
             left: 20px;
             font-size: 12px;
             color: rgba(255, 255, 255, 0.4);
-            z-index: 200; /* Increased to stay above all overlays */
+            z-index: 200;
             pointer-events: none;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
         }
@@ -249,11 +249,9 @@
 
     function makeMove(r, c) {
         if (board[r][c] !== 0 || gameOver || isProcessing) return;
-        
         isProcessing = true;
         board[r][c] = currentPlayer;
         moveHistory.push({r, c, player: currentPlayer});
-        
         drawBoard();
 
         setTimeout(() => {
@@ -294,31 +292,72 @@
 
     function aiMove() {
         if (gameOver) return;
-        let best = -1, move = null;
+        let bestScore = -1;
+        let bestMove = null;
+
         for(let r=0; r<SIZE; r++) {
             for(let c=0; c<SIZE; c++) {
                 if(board[r][c] === 0) {
-                    let score = Math.random() * 5;
-                    score += evaluate(r, c, 2) * (gameMode==='pve-hard'?2.5:1) + evaluate(r, c, 1) * 1.5;
-                    if(score > best) { best = score; move = {r, c}; }
+                    // AI 的进攻分
+                    let attackScore = evaluate(r, c, 2);
+                    // 拦截玩家的防御分
+                    let defenseScore = evaluate(r, c, 1);
+                    
+                    // 总分逻辑：极大增强防御权。如果玩家有威胁，防御分会呈指数级增长
+                    let currentMoveScore = attackScore + defenseScore * (gameMode === 'pve-hard' ? 1.2 : 1.0);
+                    
+                    if(currentMoveScore > bestScore) {
+                        bestScore = currentMoveScore;
+                        bestMove = {r, c};
+                    }
                 }
             }
         }
-        if(move) makeMove(move.r, move.c);
+        if(bestMove) makeMove(bestMove.r, bestMove.c);
     }
 
     function evaluate(r, c, p) {
-        let score = 0;
+        let totalScore = 0;
         const dirs = [[1,0], [0,1], [1,1], [1,-1]];
+        
         for (let [dr, dc] of dirs) {
             let count = 0;
+            let block = 0;
+
+            // 正向检查
             for(let i=1; i<5; i++) {
                 let nr=r+dr*i, nc=c+dc*i;
-                if(nr>=0 && nr<SIZE && nc>=0 && nc<SIZE && board[nr][nc]===p) count++; else break;
+                if(nr>=0 && nr<SIZE && nc>=0 && nc<SIZE) {
+                    if(board[nr][nc] === p) count++;
+                    else if(board[nr][nc] === 0) break;
+                    else { block++; break; }
+                } else { block++; break; }
             }
-            score += Math.pow(10, count);
+            // 反向检查
+            for(let i=1; i<5; i++) {
+                let nr=r-dr*i, nc=c-dc*i;
+                if(nr>=0 && nr<SIZE && nc>=0 && nc<SIZE) {
+                    if(board[nr][nc] === p) count++;
+                    else if(board[nr][nc] === 0) break;
+                    else { block++; break; }
+                } else { block++; break; }
+            }
+
+            // 评分逻辑：根据连子数和被拦截情况评估分数
+            if(count >= 4) totalScore += 100000; // 连五或冲五
+            else if(count === 3) {
+                if(block === 0) totalScore += 10000; // 活四
+                else if(block === 1) totalScore += 5000; // 冲四
+            }
+            else if(count === 2) {
+                if(block === 0) totalScore += 1000; // 活三
+                else if(block === 1) totalScore += 500;
+            }
+            else if(count === 1) {
+                if(block === 0) totalScore += 100; // 活二
+            }
         }
-        return score;
+        return totalScore;
     }
 
     function undoMove() {
@@ -349,7 +388,6 @@
         if(winner === 1) scores.p1++; else scores.p2++;
         localStorage.setItem('gomoku_scores', JSON.stringify(scores));
         updateScoreDisplay();
-        
         gameOverMsg.innerText = winner === 1 ? "Black Wins!" : "White Wins!";
         if(msg) gameOverMsg.innerText = msg;
         gameOverOverlay.classList.remove('hidden');
