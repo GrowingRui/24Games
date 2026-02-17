@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>星际射击 - 挑战升级版</title>
+    <title>星际射击 - 密集挑战版</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', Arial, sans-serif; touch-action: none; }
         canvas { display: block; }
@@ -35,7 +35,7 @@ let score = 0;
 let health = 3;
 let level = 0;
 let gameOver = false;
-let baseSpeed = 2; // 初始陨石基础速度
+let baseSpeed = 2; 
 
 function resize() {
     canvas.width = window.innerWidth;
@@ -67,10 +67,10 @@ function handleMove(e) {
 window.addEventListener('mousemove', handleMove);
 window.addEventListener('touchmove', (e) => { e.preventDefault(); handleMove(e); }, { passive: false });
 
-// 自动射击
+// 自动射击 (稍微加快射速以应对密集的陨石)
 setInterval(() => {
     if (!gameOver) bullets.push({ x: player.x + player.w/2 - 2, y: player.y, w: 4, h: 18 });
-}, 250);
+}, 200);
 
 // 生成陨石
 function spawnAsteroid() {
@@ -82,7 +82,7 @@ function spawnAsteroid() {
         vertices.push({x: Math.cos(angle)*dist, y: Math.sin(angle)*dist});
     }
     
-    // 难度计算：基础速度 + 等级加成 (每级增加0.5速度)
+    // 速度计算
     const currentSpeed = baseSpeed + (level * 0.5) + Math.random() * 2;
 
     asteroids.push({
@@ -96,42 +96,41 @@ function spawnAsteroid() {
         rotSpeed: Math.random() * 0.05 - 0.02
     });
     
-    // 动态调整刷新率：等级越高，陨石生成越快
-    let spawnRate = Math.max(300, 900 - (level * 50));
+    // --- 修改处：让陨石生成更密集 ---
+    // 初始生成间隔从 900ms 缩短到 500ms，且随等级提升变得更疯狂
+    let spawnRate = Math.max(150, 500 - (level * 40));
+    
     if (!gameOver) setTimeout(spawnAsteroid, spawnRate);
 }
+// 初始多调用几次，让开局就比较热闹
 spawnAsteroid();
+setTimeout(spawnAsteroid, 300);
 
 function update() {
     if (gameOver) return;
 
-    // 背景滚动
     stars.forEach(s => {
         s.y += s.speed;
         if(s.y > canvas.height) s.y = 0;
     });
 
-    // 等级更新逻辑：每100分升一级
     let newLevel = Math.floor(score / 100);
     if (newLevel > level) {
         level = newLevel;
         levelEl.innerText = level;
     }
 
-    // 子弹更新
     bullets.forEach((b, i) => {
         b.y -= 10;
         if (b.y < 0) bullets.splice(i, 1);
     });
 
-    // 陨石更新
     asteroids.forEach((ast, i) => {
         ast.y += ast.speed;
         ast.rot += ast.rotSpeed;
 
         if (ast.y > canvas.height) asteroids.splice(i, 1);
 
-        // 碰撞：子弹和陨石
         bullets.forEach((b, bi) => {
             if (b.x < ast.x + ast.w && b.x + b.w > ast.x && b.y < ast.y + ast.h && b.y + b.h > ast.y) {
                 asteroids.splice(i, 1);
@@ -141,7 +140,6 @@ function update() {
             }
         });
 
-        // 碰撞：玩家和陨石
         if (player.x < ast.x + ast.w && player.x + player.w > ast.x && player.y < ast.y + ast.h && player.y + player.h > ast.y) {
             asteroids.splice(i, 1);
             health--;
@@ -156,26 +154,22 @@ function update() {
 }
 
 function draw() {
-    // 绘制太空背景
     const bgGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
     bgGrad.addColorStop(0, '#000b1a');
     bgGrad.addColorStop(1, '#001a33');
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // 星空
     ctx.fillStyle = "#FFF";
     stars.forEach(s => ctx.fillRect(s.x, s.y, s.size, s.size));
 
     // 飞船
     ctx.save();
     ctx.translate(player.x + player.w/2, player.y + player.h/2);
-    // 火焰
     ctx.fillStyle = `rgba(255, ${100 + Math.random()*155}, 0, 0.8)`;
     ctx.beginPath();
     ctx.ellipse(0, 30, 7, 15 + Math.random()*15, 0, 0, Math.PI*2);
     ctx.fill();
-    // 船体
     ctx.fillStyle = '#f0f0f0';
     ctx.beginPath();
     ctx.moveTo(0, -30);
@@ -184,7 +178,6 @@ function draw() {
     ctx.lineTo(22, 20);
     ctx.closePath();
     ctx.fill();
-    // 驾驶舱
     ctx.fillStyle = '#00d2ff';
     ctx.beginPath();
     ctx.arc(0, -5, 6, 0, Math.PI*2);
