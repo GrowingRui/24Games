@@ -3,18 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Spaceship Adventure</title>
+    <title>星际射击 - 挑战升级版</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: Arial, sans-serif; touch-action: none; }
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', Arial, sans-serif; touch-action: none; }
         canvas { display: block; }
         #ui {
-            position: absolute; top: 10px; left: 10px; color: white;
-            font-size: 20px; pointer-events: none; text-shadow: 2px 2px 4px #000;
+            position: absolute; top: 20px; left: 20px; color: #00d2ff;
+            font-size: 20px; font-weight: bold; pointer-events: none;
+            text-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
+            line-height: 1.5;
         }
+        .highlight { color: #fff700; text-shadow: 0 0 15px #fff700; }
     </style>
 </head>
 <body>
-    <div id="ui">Score: <span id="score">0</span> |Spaceship Health: <span id="health">3</span></div>
+    <div id="ui">
+        LEVEL: <span id="level" class="highlight">0</span><br>
+        SCORE: <span id="score">0</span> | LIFE: <span id="health">3</span>
+    </div>
     <canvas id="gameCanvas"></canvas>
 
 <script>
@@ -22,13 +28,15 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const scoreEl = document.getElementById('score');
 const healthEl = document.getElementById('health');
+const levelEl = document.getElementById('level');
 
-// 游戏状态
+// 游戏核心变量
 let score = 0;
 let health = 3;
+let level = 0;
 let gameOver = false;
+let baseSpeed = 2; // 初始陨石基础速度
 
-// 适配屏幕尺寸
 function resize() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -36,68 +44,94 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
-// 玩家对象
-const player = {
-    x: canvas.width / 2,
-    y: canvas.height - 80,
-    w: 50,
-    h: 50,
-    color: '#00d2ff'
-};
+// 星空数据
+const stars = [];
+for(let i=0; i<150; i++) {
+    stars.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        size: Math.random() * 2,
+        speed: Math.random() * 0.5 + 0.2
+    });
+}
 
+const player = { x: canvas.width / 2, y: canvas.height - 100, w: 45, h: 55 };
 const bullets = [];
 const asteroids = [];
 
-// 控制逻辑 (鼠标 & 触摸)
+// 操控逻辑
 function handleMove(e) {
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     player.x = clientX - player.w / 2;
 }
 window.addEventListener('mousemove', handleMove);
-window.addEventListener('touchmove', (e) => {
-    e.preventDefault();
-    handleMove(e);
-}, { passive: false });
+window.addEventListener('touchmove', (e) => { e.preventDefault(); handleMove(e); }, { passive: false });
 
 // 自动射击
 setInterval(() => {
-    if (!gameOver) {
-        bullets.push({ x: player.x + player.w / 2 - 2, y: player.y, w: 4, h: 15 });
-    }
-}, 200);
+    if (!gameOver) bullets.push({ x: player.x + player.w/2 - 2, y: player.y, w: 4, h: 18 });
+}, 250);
 
 // 生成陨石
 function spawnAsteroid() {
-    const size = Math.random() * 40 + 20;
+    const size = Math.random() * 30 + 30;
+    const vertices = [];
+    for(let i=0; i<8; i++) {
+        const angle = (i / 8) * Math.PI * 2;
+        const dist = size/2 * (0.8 + Math.random() * 0.4);
+        vertices.push({x: Math.cos(angle)*dist, y: Math.sin(angle)*dist});
+    }
+    
+    // 难度计算：基础速度 + 等级加成 (每级增加0.5速度)
+    const currentSpeed = baseSpeed + (level * 0.5) + Math.random() * 2;
+
     asteroids.push({
         x: Math.random() * (canvas.width - size),
         y: -size,
         w: size,
         h: size,
-        speed: Math.random() * 3 + 2
+        vertices: vertices,
+        speed: currentSpeed,
+        rot: 0,
+        rotSpeed: Math.random() * 0.05 - 0.02
     });
-    if (!gameOver) setTimeout(spawnAsteroid, 800);
+    
+    // 动态调整刷新率：等级越高，陨石生成越快
+    let spawnRate = Math.max(300, 900 - (level * 50));
+    if (!gameOver) setTimeout(spawnAsteroid, spawnRate);
 }
 spawnAsteroid();
 
-// 核心更新循环
 function update() {
     if (gameOver) return;
 
-    // 更新子弹
+    // 背景滚动
+    stars.forEach(s => {
+        s.y += s.speed;
+        if(s.y > canvas.height) s.y = 0;
+    });
+
+    // 等级更新逻辑：每100分升一级
+    let newLevel = Math.floor(score / 100);
+    if (newLevel > level) {
+        level = newLevel;
+        levelEl.innerText = level;
+    }
+
+    // 子弹更新
     bullets.forEach((b, i) => {
-        b.y -= 7;
+        b.y -= 10;
         if (b.y < 0) bullets.splice(i, 1);
     });
 
-    // 更新陨石
+    // 陨石更新
     asteroids.forEach((ast, i) => {
         ast.y += ast.speed;
+        ast.rot += ast.rotSpeed;
 
-        // 陨石飞出屏幕
         if (ast.y > canvas.height) asteroids.splice(i, 1);
 
-        // 碰撞检测：子弹击中陨石
+        // 碰撞：子弹和陨石
         bullets.forEach((b, bi) => {
             if (b.x < ast.x + ast.w && b.x + b.w > ast.x && b.y < ast.y + ast.h && b.y + b.h > ast.y) {
                 asteroids.splice(i, 1);
@@ -107,42 +141,82 @@ function update() {
             }
         });
 
-        // 碰撞检测：陨石撞击飞船
+        // 碰撞：玩家和陨石
         if (player.x < ast.x + ast.w && player.x + player.w > ast.x && player.y < ast.y + ast.h && player.y + player.h > ast.y) {
             asteroids.splice(i, 1);
             health--;
             healthEl.innerText = health;
             if (health <= 0) {
                 gameOver = true;
-                alert("Game Over! Final Score: " + score);
+                alert(`游戏结束！\n你的等级: ${level}\n最终得分: ${score}`);
                 location.reload();
             }
         }
     });
 }
 
-// 绘制图形
 function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // 绘制太空背景
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    bgGrad.addColorStop(0, '#000b1a');
+    bgGrad.addColorStop(1, '#001a33');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // 画飞船 (三角形)
-    ctx.fillStyle = player.color;
+    // 星空
+    ctx.fillStyle = "#FFF";
+    stars.forEach(s => ctx.fillRect(s.x, s.y, s.size, s.size));
+
+    // 飞船
+    ctx.save();
+    ctx.translate(player.x + player.w/2, player.y + player.h/2);
+    // 火焰
+    ctx.fillStyle = `rgba(255, ${100 + Math.random()*155}, 0, 0.8)`;
     ctx.beginPath();
-    ctx.moveTo(player.x + player.w / 2, player.y);
-    ctx.lineTo(player.x, player.y + player.h);
-    ctx.lineTo(player.x + player.w, player.y + player.h);
+    ctx.ellipse(0, 30, 7, 15 + Math.random()*15, 0, 0, Math.PI*2);
     ctx.fill();
+    // 船体
+    ctx.fillStyle = '#f0f0f0';
+    ctx.beginPath();
+    ctx.moveTo(0, -30);
+    ctx.lineTo(-22, 20);
+    ctx.lineTo(0, 12);
+    ctx.lineTo(22, 20);
+    ctx.closePath();
+    ctx.fill();
+    // 驾驶舱
+    ctx.fillStyle = '#00d2ff';
+    ctx.beginPath();
+    ctx.arc(0, -5, 6, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
 
-    // 画子弹
-    ctx.fillStyle = '#fff700';
-    bullets.forEach(b => ctx.fillRect(b.x, b.y, b.w, b.h));
+    // 子弹
+    bullets.forEach(b => {
+        ctx.fillStyle = '#00f2ff';
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#00f2ff';
+        ctx.fillRect(b.x, b.y, b.w, b.h);
+        ctx.shadowBlur = 0;
+    });
 
-    // 画陨石
-    ctx.fillStyle = '#ff4d4d';
+    // 陨石
     asteroids.forEach(ast => {
+        ctx.save();
+        ctx.translate(ast.x + ast.w/2, ast.y + ast.h/2);
+        ctx.rotate(ast.rot);
+        ctx.fillStyle = '#6e5a4e';
+        ctx.strokeStyle = '#4a3c32';
+        ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.arc(ast.x + ast.w/2, ast.y + ast.h/2, ast.w/2, 0, Math.PI*2);
+        ast.vertices.forEach((v, idx) => {
+            if(idx === 0) ctx.moveTo(v.x, v.y);
+            else ctx.lineTo(v.x, v.y);
+        });
+        ctx.closePath();
         ctx.fill();
+        ctx.stroke();
+        ctx.restore();
     });
 
     update();
