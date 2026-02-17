@@ -87,7 +87,7 @@
         .btn:hover { background: var(--accent); color: #000; transform: translateY(-2px); box-shadow: 0 10px 20px rgba(56, 189, 248, 0.2); }
         .btn-danger:hover { background: var(--danger); color: white; }
 
-        /* Game UI Symmetry */
+        /* Game UI */
         #game-info {
             display: flex;
             justify-content: center;
@@ -159,15 +159,15 @@
         </div>
     </div>
 
-    <div id="game-info">
+    <div id="game-info" class="hidden">
         <div class="stat-box"><div class="stat-label">Time Left</div><div class="stat-value" id="timer">10:00</div></div>
         <div class="stat-box"><div class="stat-label">Turn</div><div class="stat-value" id="turn-display" style="color: var(--accent);">Black</div></div>
         <div class="stat-box"><div class="stat-label">Score</div><div class="stat-value" id="score-display">0 - 0</div></div>
     </div>
 
-    <canvas id="board" width="600" height="600"></canvas>
+    <canvas id="board" class="hidden" width="600" height="600"></canvas>
 
-    <div class="game-controls">
+    <div id="game-ctrl-container" class="game-controls hidden">
         <button class="btn" style="width: 130px;" onclick="undoMove()">Undo</button>
         <button class="btn btn-danger" style="width: 130px;" onclick="surrender()">Surrender</button>
         <button class="btn" style="width: 130px; background: #475569;" onclick="exitToMenu()">Exit</button>
@@ -182,6 +182,10 @@
     const gameOverOverlay = document.getElementById('game-over-overlay');
     const gameOverMsg = document.getElementById('game-over-msg');
     
+    // NEW: UI Containers
+    const gameInfo = document.getElementById('game-info');
+    const gameCtrls = document.getElementById('game-ctrl-container');
+
     const SIZE = 15;
     const PADDING = 40;
     const CELL = (canvas.width - PADDING * 2) / (SIZE - 1);
@@ -294,22 +298,13 @@
         if (gameOver) return;
         let bestScore = -1;
         let bestMove = null;
-
         for(let r=0; r<SIZE; r++) {
             for(let c=0; c<SIZE; c++) {
                 if(board[r][c] === 0) {
-                    // AI 的进攻分
                     let attackScore = evaluate(r, c, 2);
-                    // 拦截玩家的防御分
                     let defenseScore = evaluate(r, c, 1);
-                    
-                    // 总分逻辑：极大增强防御权。如果玩家有威胁，防御分会呈指数级增长
                     let currentMoveScore = attackScore + defenseScore * (gameMode === 'pve-hard' ? 1.2 : 1.0);
-                    
-                    if(currentMoveScore > bestScore) {
-                        bestScore = currentMoveScore;
-                        bestMove = {r, c};
-                    }
+                    if(currentMoveScore > bestScore) { bestScore = currentMoveScore; bestMove = {r, c}; }
                 }
             }
         }
@@ -319,12 +314,8 @@
     function evaluate(r, c, p) {
         let totalScore = 0;
         const dirs = [[1,0], [0,1], [1,1], [1,-1]];
-        
         for (let [dr, dc] of dirs) {
-            let count = 0;
-            let block = 0;
-
-            // 正向检查
+            let count = 0, block = 0;
             for(let i=1; i<5; i++) {
                 let nr=r+dr*i, nc=c+dc*i;
                 if(nr>=0 && nr<SIZE && nc>=0 && nc<SIZE) {
@@ -333,7 +324,6 @@
                     else { block++; break; }
                 } else { block++; break; }
             }
-            // 反向检查
             for(let i=1; i<5; i++) {
                 let nr=r-dr*i, nc=c-dc*i;
                 if(nr>=0 && nr<SIZE && nc>=0 && nc<SIZE) {
@@ -342,20 +332,10 @@
                     else { block++; break; }
                 } else { block++; break; }
             }
-
-            // 评分逻辑：根据连子数和被拦截情况评估分数
-            if(count >= 4) totalScore += 100000; // 连五或冲五
-            else if(count === 3) {
-                if(block === 0) totalScore += 10000; // 活四
-                else if(block === 1) totalScore += 5000; // 冲四
-            }
-            else if(count === 2) {
-                if(block === 0) totalScore += 1000; // 活三
-                else if(block === 1) totalScore += 500;
-            }
-            else if(count === 1) {
-                if(block === 0) totalScore += 100; // 活二
-            }
+            if(count >= 4) totalScore += 100000;
+            else if(count === 3) totalScore += (block === 0 ? 10000 : 5000);
+            else if(count === 2) totalScore += (block === 0 ? 1000 : 500);
+            else if(count === 1) totalScore += (block === 0 ? 100 : 0);
         }
         return totalScore;
     }
@@ -363,7 +343,7 @@
     function undoMove() {
         if (gameOver || moveHistory.length === 0 || isProcessing) return;
         if (gameMode.startsWith('pve')) {
-            if (currentPlayer === 1) {
+            if (currentPlayer === 1 && moveHistory.length >= 2) {
                 moveHistory.pop(); moveHistory.pop();
             } else return;
         } else {
@@ -407,6 +387,10 @@
     function startGame(mode) {
         gameMode = mode;
         document.getElementById('menu').classList.add('hidden');
+        // Show Game Elements
+        gameInfo.classList.remove('hidden');
+        canvas.classList.remove('hidden');
+        gameCtrls.classList.remove('hidden');
         initBoard();
         drawBoard();
     }
@@ -414,6 +398,9 @@
     function exitToMenu() {
         clearInterval(timerInterval);
         gameOverOverlay.classList.add('hidden');
+        gameInfo.classList.add('hidden');
+        canvas.classList.add('hidden');
+        gameCtrls.classList.add('hidden');
         document.getElementById('menu').classList.remove('hidden');
     }
 
