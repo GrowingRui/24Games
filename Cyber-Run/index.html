@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber Runner - Minimalist Arcade</title>
+    <style>
+        :root {
+            --primary-color: #00ffcc;
+            --bg-dark: #1a1a1a;
+            --text-light: #ffffff;
+            --danger: #ff0055;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #0a0a0a;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-light);
+            overflow: hidden;
+        }
+
+        #game-container {
+            position: relative;
+            box-shadow: 0 0 50px rgba(0, 255, 204, 0.2);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            background-color: var(--bg-dark);
+        }
+
+        /* User Interface Overlay */
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            font-size: 18px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+        }
+
+        #overlay-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+            transition: opacity 0.3s ease;
+        }
+
+        #overlay-screen.hidden {
+            display: none;
+        }
+
+        h1 {
+            font-size: 48px;
+            margin: 0;
+            color: var(--primary-color);
+            text-transform: uppercase;
+            letter-spacing: 5px;
+        }
+
+        p {
+            font-size: 16px;
+            margin: 10px 0;
+            color: #888;
+        }
+
+        .btn-start {
+            margin-top: 20px;
+            padding: 12px 30px;
+            background: transparent;
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: all 0.2s;
+        }
+
+        .btn-start:hover {
+            background: var(--primary-color);
+            color: var(--bg-dark);
+            box-shadow: 0 0 20px var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="ui-layer">
+        <div class="stats-bar">
+            <div id="scoreDisplay">SCORE: 000</div>
+            <div id="highScoreDisplay">BEST: 000</div>
+        </div>
+    </div>
+
+    <div id="overlay-screen">
+        <h1 id="status-title">CYBER RUN</h1>
+        <p id="status-msg">Avoid the red glitches.</p>
+        <button class="btn-start" onclick="startGame()">START GAME</button>
+        <p style="margin-top: 15px; font-size: 12px;">PRESS [SPACE] OR TAP TO JUMP</p>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('scoreDisplay');
+    const highScoreEl = document.getElementById('highScoreDisplay');
+    const overlay = document.getElementById('overlay-screen');
+    const statusTitle = document.getElementById('status-title');
+
+    canvas.width = 800;
+    canvas.height = 300;
+
+    // Game State
+    let score = 0;
+    let highScore = localStorage.getItem('cyberHighscore') || 0;
+    let gameSpeed = 6;
+    let isGameOver = true;
+    let obstacles = [];
+    let animationId;
+
+    highScoreEl.innerText = `BEST: ${highScore}`;
+
+    const player = {
+        x: 80,
+        y: 200,
+        width: 35,
+        height: 35,
+        color: '#00ffcc',
+        dy: 0,
+        jumpForce: 13,
+        gravity: 0.7,
+        grounded: false
+    };
+
+    // Controls
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') handleInput();
+    });
+    canvas.addEventListener('mousedown', handleInput);
+
+    function handleInput() {
+        if (isGameOver && overlay.classList.contains('hidden') === false) {
+            startGame();
+        } else if (!isGameOver && player.grounded) {
+            player.dy = -player.jumpForce;
+            player.grounded = false;
+        }
+    }
+
+    function createObstacle() {
+        const height = 20 + Math.random() * 40;
+        obstacles.push({
+            x: canvas.width,
+            y: canvas.height - height - 20,
+            width: 25,
+            height: height,
+            color: '#ff0055'
+        });
+    }
+
+    function startGame() {
+        score = 0;
+        gameSpeed = 6;
+        obstacles = [];
+        isGameOver = false;
+        player.y = 200;
+        player.dy = 0;
+        overlay.classList.add('hidden');
+        update();
+    }
+
+    function gameOver() {
+        isGameOver = true;
+        cancelAnimationFrame(animationId);
+        
+        if (score > highScore) {
+            highScore = score;
+            localStorage.setItem('cyberHighscore', highScore);
+            highScoreEl.innerText = `BEST: ${highScore}`;
+        }
+
+        statusTitle.innerText = "CRASHED";
+        overlay.classList.remove('hidden');
+    }
+
+    function update() {
+        if (isGameOver) return;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw Ground Grid Line
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, canvas.height - 20);
+        ctx.lineTo(canvas.width, canvas.height - 20);
+        ctx.stroke();
+
+        // Player Physics
+        player.dy += player.gravity;
+        player.y += player.dy;
+
+        if (player.y + player.height > canvas.height - 20) {
+            player.y = canvas.height - 20 - player.height;
+            player.dy = 0;
+            player.grounded = true;
+        }
+
+        // Draw Player with a glow effect
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = player.color;
+        ctx.fillStyle = player.color;
+        ctx.fillRect(player.x, player.y, player.width, player.height);
+        ctx.shadowBlur = 0; // Reset glow for other elements
+
+        // Obstacle Logic
+        if (Math.random() < 0.015 && (obstacles.length === 0 || obstacles[obstacles.length-1].x < canvas.width - 300)) {
+            createObstacle();
+        }
+
+        for (let i = obstacles.length - 1; i >= 0; i--) {
+            let o = obstacles[i];
+            o.x -= gameSpeed;
+
+            // Draw Obstacle
+            ctx.fillStyle = o.color;
+            ctx.fillRect(o.x, o.y, o.width, o.height);
+
+            // Collision Detection
+            if (
+                player.x < o.x + o.width &&
+                player.x + player.width > o.x &&
+                player.y < o.y + o.height &&
+                player.y + player.height > o.y
+            ) {
+                gameOver();
+            }
+
+            // Scoring and Removal
+            if (o.x + o.width < 0) {
+                obstacles.splice(i, 1);
+                score++;
+                scoreEl.innerText = `SCORE: ${score.toString().padStart(3, '0')}`;
+                // Slowly increase difficulty
+                if (score % 5 === 0) gameSpeed += 0.1;
+            }
+        }
+
+        animationId = requestAnimationFrame(update);
+    }
+</script>
+</body>
+</html>
