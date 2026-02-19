@@ -18,6 +18,8 @@ To access the weather app What2wear please click here -> https://growingrui.gith
 
 Please note: 📍 Location services need to be enabled for the app What2wear to function properly.
 
+To access the game app CyberRun please click here -> https://growingrui.github.io/brainstorming/Cyber-Run
+
 ## About
 
 This project is intended for anyone who enjoys **brain-training, fun math challenges, and logic puzzles**. New games will be added regularly, making this repository a growing hub for puzzle enthusiasts.
