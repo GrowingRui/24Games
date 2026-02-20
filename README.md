@@ -18,7 +18,7 @@ To access the weather app What2wear please click here -> https://growingrui.gith
 
 Please note: 📍 Location services need to be enabled for the app What2wear to function properly.
 
-To access the game app CyberRun please click here -> https://growingrui.github.io/brainstorming/Cyber-Run
+To access the game app CyberRun please click here -> 
 
 ## About
 
