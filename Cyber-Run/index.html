@@ -3,272 +3,285 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neon Stallion - Turbo Edition</title>
+    <title>Cyber Runner - Minimalist Arcade</title>
     <style>
         :root {
-            --neon-blue: #00d2ff;
-            --neon-pink: #ff00ff;
-            --bg-dark: #050505;
+            --primary-color: #00ffcc;
+            --bg-dark: #1a1a1a;
+            --text-light: #ffffff;
+            --danger: #ff0055;
         }
 
         body {
             margin: 0;
+            padding: 0;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #000;
-            font-family: 'Courier New', Courier, monospace;
-            color: white;
+            background-color: #0a0a0a;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-light);
             overflow: hidden;
         }
 
-        #game-wrapper {
+        #game-container {
             position: relative;
-            border: 4px solid var(--neon-blue);
-            box-shadow: 0 0 20px var(--neon-blue);
+            box-shadow: 0 0 50px rgba(0, 255, 204, 0.2);
+            border-radius: 8px;
+            overflow: hidden;
         }
 
         canvas {
             display: block;
-            background: linear-gradient(to bottom, #000000 0%, #111111 100%);
+            background-color: var(--bg-dark);
         }
 
-        #ui {
+        /* User Interface Overlay */
+        #ui-layer {
             position: absolute;
-            top: 15px;
+            top: 0;
+            left: 0;
             width: 100%;
-            display: flex;
-            justify-content: space-around;
+            height: 100%;
             pointer-events: none;
-            font-size: 20px;
-            font-weight: bold;
-            text-shadow: 0 0 10px var(--neon-blue);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+            box-sizing: border-box;
         }
 
-        #overlay {
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            font-size: 18px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+        }
+
+        #overlay-screen {
             position: absolute;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.85);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            z-index: 10;
+            pointer-events: auto;
+            transition: opacity 0.3s ease;
+        }
+
+        #overlay-screen.hidden {
+            display: none;
         }
 
         h1 {
-            color: var(--neon-pink);
-            font-size: 50px;
+            font-size: 48px;
             margin: 0;
-            letter-spacing: 10px;
-            text-shadow: 0 0 15px var(--neon-pink);
+            color: var(--primary-color);
+            text-transform: uppercase;
+            letter-spacing: 5px;
         }
 
-        button {
-            margin-top: 30px;
-            padding: 15px 40px;
+        p {
+            font-size: 16px;
+            margin: 10px 0;
+            color: #888;
+        }
+
+        .btn-start {
+            margin-top: 20px;
+            padding: 12px 30px;
             background: transparent;
-            border: 2px solid var(--neon-blue);
-            color: var(--neon-blue);
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
             cursor: pointer;
-            font-size: 20px;
-            transition: 0.3s;
+            font-size: 18px;
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: all 0.2s;
         }
 
-        button:hover {
-            background: var(--neon-blue);
-            color: black;
-            box-shadow: 0 0 30px var(--neon-blue);
+        .btn-start:hover {
+            background: var(--primary-color);
+            color: var(--bg-dark);
+            box-shadow: 0 0 20px var(--primary-color);
         }
-
-        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-<div id="game-wrapper">
+<div id="game-container">
     <canvas id="gameCanvas"></canvas>
     
-    <div id="ui">
-        <div id="score">SCORE: 00</div>
-        <div id="level">LVL: 1</div>
-        <div id="best">BEST: 00</div>
+    <div id="ui-layer">
+        <div class="stats-bar">
+            <div id="scoreDisplay">SCORE: 000</div>
+            <div id="highScoreDisplay">BEST: 000</div>
+        </div>
     </div>
 
-    <div id="overlay">
-        <h1 id="title">NEON STALLION</h1>
-        <p id="msg">THE GRID AWAITS</p>
-        <button onclick="initGame()">RUN</button>
+    <div id="overlay-screen">
+        <h1 id="status-title">CYBER RUN</h1>
+        <p id="status-msg">Avoid the red glitches.</p>
+        <button class="btn-start" onclick="startGame()">START GAME</button>
+        <p style="margin-top: 15px; font-size: 12px;">PRESS [SPACE] OR TAP TO JUMP</p>
     </div>
 </div>
 
 <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-    const scoreText = document.getElementById('score');
-    const levelText = document.getElementById('level');
-    const bestText = document.getElementById('best');
-    const overlay = document.getElementById('overlay');
-    const title = document.getElementById('title');
+    const scoreEl = document.getElementById('scoreDisplay');
+    const highScoreEl = document.getElementById('highScoreDisplay');
+    const overlay = document.getElementById('overlay-screen');
+    const statusTitle = document.getElementById('status-title');
 
-    canvas.width = 900;
-    canvas.height = 350;
+    canvas.width = 800;
+    canvas.height = 300;
 
+    // Game State
     let score = 0;
-    let highScore = localStorage.getItem('horseScore') || 0;
-    let gameSpeed = 7;
-    let isPlaying = false;
+    let highScore = localStorage.getItem('cyberHighscore') || 0;
+    let gameSpeed = 6;
+    let isGameOver = true;
     let obstacles = [];
-    let frameCount = 0;
-    let groundX = 0;
+    let animationId;
 
-    bestText.innerText = `BEST: ${highScore}`;
+    highScoreEl.innerText = `BEST: ${highScore}`;
 
-    const horse = {
-        x: 100,
-        y: 250,
-        w: 60,
-        h: 50,
+    const player = {
+        x: 80,
+        y: 200,
+        width: 35,
+        height: 35,
+        color: '#00ffcc',
         dy: 0,
-        jump: 14,
+        jumpForce: 13,
         gravity: 0.7,
-        onGround: false,
-        animFrame: 0
+        grounded: false
     };
 
-    function drawHorse(x, y, frame) {
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.fillStyle = "#00d2ff";
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = "#00d2ff";
+    // Controls
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') handleInput();
+    });
+    canvas.addEventListener('mousedown', handleInput);
 
-        // Body
-        ctx.fillRect(10, 15, 35, 20);
-        // Neck & Head
-        ctx.fillRect(35, 5, 12, 15);
-        ctx.fillRect(42, 2, 15, 10);
-        
-        // Animated Legs (Galloping effect)
-        let legMove = Math.sin(frame * 0.2) * 10;
-        ctx.fillRect(12, 35, 6, 10 + legMove); // Front Leg
-        ctx.fillRect(32, 35, 6, 10 - legMove); // Back Leg
-        
-        // Tail
-        ctx.fillStyle = "#ff00ff";
-        ctx.fillRect(2, 18, 10, 5);
-
-        ctx.restore();
-    }
-
-    function handleAction() {
-        if (!isPlaying) return;
-        if (horse.onGround) {
-            horse.dy = -horse.jump;
-            horse.onGround = false;
+    function handleInput() {
+        if (isGameOver && overlay.classList.contains('hidden') === false) {
+            startGame();
+        } else if (!isGameOver && player.grounded) {
+            player.dy = -player.jumpForce;
+            player.grounded = false;
         }
     }
 
-    window.addEventListener('keydown', e => { if(e.code === 'Space') handleAction(); });
-    canvas.addEventListener('touchstart', e => { e.preventDefault(); handleAction(); });
+    function createObstacle() {
+        const height = 20 + Math.random() * 40;
+        obstacles.push({
+            x: canvas.width,
+            y: canvas.height - height - 20,
+            width: 25,
+            height: height,
+            color: '#ff0055'
+        });
+    }
 
-    function initGame() {
+    function startGame() {
         score = 0;
-        gameSpeed = 7;
+        gameSpeed = 6;
         obstacles = [];
-        isPlaying = true;
+        isGameOver = false;
+        player.y = 200;
+        player.dy = 0;
         overlay.classList.add('hidden');
-        loop();
+        update();
     }
 
     function gameOver() {
-        isPlaying = false;
-        title.innerText = "HALTED";
-        if(score > highScore) {
+        isGameOver = true;
+        cancelAnimationFrame(animationId);
+        
+        if (score > highScore) {
             highScore = score;
-            localStorage.setItem('horseScore', highScore);
-            bestText.innerText = `BEST: ${highScore}`;
+            localStorage.setItem('cyberHighscore', highScore);
+            highScoreEl.innerText = `BEST: ${highScore}`;
         }
+
+        statusTitle.innerText = "CRASHED";
         overlay.classList.remove('hidden');
     }
 
-    function loop() {
-        if (!isPlaying) return;
+    function update() {
+        if (isGameOver) return;
+
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Ground Logic (Moving Grid)
-        groundX = (groundX - gameSpeed) % 40;
-        ctx.strokeStyle = "#222";
-        for(let i = 0; i < canvas.width + 40; i += 40) {
-            ctx.beginPath();
-            ctx.moveTo(i + groundX, 300);
-            ctx.lineTo(i + groundX, canvas.height);
-            ctx.stroke();
-        }
-        ctx.strokeStyle = var(--neon-blue);
+        // Draw Ground Grid Line
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(0, 300);
-        ctx.lineTo(canvas.width, 300);
+        ctx.moveTo(0, canvas.height - 20);
+        ctx.lineTo(canvas.width, canvas.height - 20);
         ctx.stroke();
 
-        // Physics
-        horse.dy += horse.gravity;
-        horse.y += horse.dy;
-        if (horse.y + horse.h > 300) {
-            horse.y = 300 - horse.h;
-            horse.dy = 0;
-            horse.onGround = true;
-        }
-        horse.animFrame++;
-        drawHorse(horse.x, horse.y, horse.animFrame);
+        // Player Physics
+        player.dy += player.gravity;
+        player.y += player.dy;
 
-        // Obstacle Spawning (Tighter Spacing)
-        // Adjust spawning based on speed: Higher speed = more frequent checks
-        if (frameCount % Math.max(40, Math.floor(80 - gameSpeed)) === 0) {
-            if (Math.random() > 0.4) {
-                obstacles.push({
-                    x: canvas.width,
-                    y: 260 + (Math.random() * 20),
-                    w: 20,
-                    h: 30 + (Math.random() * 20)
-                });
-            }
+        if (player.y + player.height > canvas.height - 20) {
+            player.y = canvas.height - 20 - player.height;
+            player.dy = 0;
+            player.grounded = true;
+        }
+
+        // Draw Player with a glow effect
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = player.color;
+        ctx.fillStyle = player.color;
+        ctx.fillRect(player.x, player.y, player.width, player.height);
+        ctx.shadowBlur = 0; // Reset glow for other elements
+
+        // Obstacle Logic
+        if (Math.random() < 0.015 && (obstacles.length === 0 || obstacles[obstacles.length-1].x < canvas.width - 300)) {
+            createObstacle();
         }
 
         for (let i = obstacles.length - 1; i >= 0; i--) {
             let o = obstacles[i];
             o.x -= gameSpeed;
 
-            // Draw Obstacle (Glitched Pillars)
-            ctx.fillStyle = "#ff0055";
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = "#ff0055";
-            ctx.fillRect(o.x, o.y, o.w, o.h);
-            ctx.shadowBlur = 0;
+            // Draw Obstacle
+            ctx.fillStyle = o.color;
+            ctx.fillRect(o.x, o.y, o.width, o.height);
 
-            // Collision
-            if (horse.x < o.x + o.w && horse.x + horse.w > o.x &&
-                horse.y < o.y + o.h && horse.y + horse.h > o.y) {
+            // Collision Detection
+            if (
+                player.x < o.x + o.width &&
+                player.x + player.width > o.x &&
+                player.y < o.y + o.height &&
+                player.y + player.height > o.y
+            ) {
                 gameOver();
             }
 
-            // Score & Difficulty Increase
-            if (o.x + o.w < 0) {
+            // Scoring and Removal
+            if (o.x + o.width < 0) {
                 obstacles.splice(i, 1);
                 score++;
-                scoreText.innerText = `SCORE: ${score}`;
-                
-                // Speed Increase Every 10 points
-                if (score > 0 && score % 10 === 0) {
-                    gameSpeed += 0.4; // Increase speed
-                    levelText.innerText = `LVL: ${Math.floor(score/10) + 1}`;
-                }
+                scoreEl.innerText = `SCORE: ${score.toString().padStart(3, '0')}`;
+                // Slowly increase difficulty
+                if (score % 5 === 0) gameSpeed += 0.1;
             }
         }
 
-        frameCount++;
-        requestAnimationFrame(loop);
+        animationId = requestAnimationFrame(update);
     }
 </script>
 </body>
