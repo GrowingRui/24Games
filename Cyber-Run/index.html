@@ -3,286 +3,301 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cyber Runner - Minimalist Arcade</title>
+    <title>CYBER RUN</title>
     <style>
-        :root {
-            --primary-color: #00ffcc;
-            --bg-dark: #1a1a1a;
-            --text-light: #ffffff;
-            --danger: #ff0055;
-        }
-
         body {
             margin: 0;
-            padding: 0;
+            background-color: #050505;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #0a0a0a;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: var(--text-light);
+            color: #00ffcc;
+            font-family: 'Courier New', Courier, monospace;
             overflow: hidden;
         }
 
         #game-container {
             position: relative;
-            box-shadow: 0 0 50px rgba(0, 255, 204, 0.2);
-            border-radius: 8px;
-            overflow: hidden;
+            width: 800px;
+            height: 400px;
+            border: 2px solid #00ffcc;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.3);
+            background: #000;
         }
 
         canvas {
             display: block;
-            background-color: var(--bg-dark);
         }
 
-        /* User Interface Overlay */
-        #ui-layer {
+        /* UI Styling */
+        #hud {
             position: absolute;
-            top: 0;
+            top: 10px;
             left: 0;
             width: 100%;
-            height: 100%;
-            pointer-events: none;
             display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-
-        .stats-bar {
-            display: flex;
-            justify-content: space-between;
+            justify-content: space-around;
             font-size: 18px;
-            font-weight: bold;
-            letter-spacing: 1px;
-            text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+            text-shadow: 0 0 5px #00ffcc;
+            z-index: 5;
         }
 
-        #overlay-screen {
+        #menu-overlay {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            inset: 0;
+            background: rgba(0, 0, 0, 0.9);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            pointer-events: auto;
-            transition: opacity 0.3s ease;
-        }
-
-        #overlay-screen.hidden {
-            display: none;
+            z-index: 10;
         }
 
         h1 {
-            font-size: 48px;
+            font-size: 60px;
             margin: 0;
-            color: var(--primary-color);
-            text-transform: uppercase;
-            letter-spacing: 5px;
+            letter-spacing: 8px;
+            color: #ff0055;
+            text-shadow: 0 0 20px #ff0055;
         }
 
-        p {
-            font-size: 16px;
-            margin: 10px 0;
-            color: #888;
-        }
-
-        .btn-start {
-            margin-top: 20px;
-            padding: 12px 30px;
+        .btn-run {
+            margin-top: 30px;
+            padding: 15px 50px;
             background: transparent;
-            border: 2px solid var(--primary-color);
-            color: var(--primary-color);
-            cursor: pointer;
-            font-size: 18px;
+            border: 2px solid #00ffcc;
+            color: #00ffcc;
+            font-size: 24px;
             font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
             text-transform: uppercase;
-            transition: all 0.2s;
         }
 
-        .btn-start:hover {
-            background: var(--primary-color);
-            color: var(--bg-dark);
-            box-shadow: 0 0 20px var(--primary-color);
+        .btn-run:hover {
+            background: #00ffcc;
+            color: #000;
+            box-shadow: 0 0 30px #00ffcc;
+        }
+
+        .hidden { display: none !important; }
+
+        /* CRT Scanline Effect */
+        #game-container::after {
+            content: " ";
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
         }
     </style>
 </head>
 <body>
 
 <div id="game-container">
-    <canvas id="gameCanvas"></canvas>
-    
-    <div id="ui-layer">
-        <div class="stats-bar">
-            <div id="scoreDisplay">SCORE: 000</div>
-            <div id="highScoreDisplay">BEST: 000</div>
-        </div>
+    <div id="hud">
+        <span id="scoreDisplay">SCORE: 0</span>
+        <span id="levelDisplay">LEVEL: 1</span>
+        <span id="highScoreDisplay">BEST: 0</span>
     </div>
 
-    <div id="overlay-screen">
-        <h1 id="status-title">CYBER RUN</h1>
-        <p id="status-msg">Avoid the red glitches.</p>
-        <button class="btn-start" onclick="startGame()">START GAME</button>
-        <p style="margin-top: 15px; font-size: 12px;">PRESS [SPACE] OR TAP TO JUMP</p>
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+
+    <div id="menu-overlay">
+        <h1 id="mainTitle">CYBER RUN</h1>
+        <p id="subTitle">JUMP OVER THE SYSTEM GLITCHES</p>
+        <button class="btn-run" id="startBtn">RUN</button>
     </div>
 </div>
 
 <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-    const scoreEl = document.getElementById('scoreDisplay');
-    const highScoreEl = document.getElementById('highScoreDisplay');
-    const overlay = document.getElementById('overlay-screen');
-    const statusTitle = document.getElementById('status-title');
+    const menu = document.getElementById('menu-overlay');
+    const startBtn = document.getElementById('startBtn');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const levelDisplay = document.getElementById('levelDisplay');
+    const highScoreDisplay = document.getElementById('highScoreDisplay');
+    const mainTitle = document.getElementById('mainTitle');
 
-    canvas.width = 800;
-    canvas.height = 300;
-
-    // Game State
+    // Game Constants
+    const GROUND_Y = 350;
     let score = 0;
-    let highScore = localStorage.getItem('cyberHighscore') || 0;
+    let highScore = localStorage.getItem('cyberRunBest') || 0;
     let gameSpeed = 6;
-    let isGameOver = true;
+    let isGameRunning = false;
     let obstacles = [];
-    let animationId;
+    let frame = 0;
 
-    highScoreEl.innerText = `BEST: ${highScore}`;
+    highScoreDisplay.innerText = `BEST: ${highScore}`;
 
     const player = {
         x: 80,
-        y: 200,
-        width: 35,
-        height: 35,
-        color: '#00ffcc',
+        y: 300,
+        w: 50,
+        h: 40,
         dy: 0,
-        jumpForce: 13,
-        gravity: 0.7,
-        grounded: false
+        gravity: 0.8,
+        jumpPower: -15,
+        onGround: false,
+        draw(frame) {
+            ctx.strokeStyle = "#00ffcc";
+            ctx.lineWidth = 3;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "#00ffcc";
+            
+            // Minimalist Horse Shape
+            ctx.beginPath();
+            // Body
+            ctx.rect(this.x + 10, this.y + 10, 30, 15);
+            // Neck
+            ctx.moveTo(this.x + 40, this.y + 15);
+            ctx.lineTo(this.x + 50, this.y + 5);
+            // Head
+            ctx.lineTo(this.x + 60, this.y + 5);
+            // Legs (Gallop animation)
+            let legOffset = Math.sin(frame * 0.2) * 8;
+            ctx.moveTo(this.x + 15, this.y + 25);
+            ctx.lineTo(this.x + 15 + legOffset, this.y + 40);
+            ctx.moveTo(this.x + 35, this.y + 25);
+            ctx.lineTo(this.x + 35 - legOffset, this.y + 40);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+        }
     };
 
-    // Controls
-    window.addEventListener('keydown', (e) => {
-        if (e.code === 'Space') handleInput();
-    });
-    canvas.addEventListener('mousedown', handleInput);
-
-    function handleInput() {
-        if (isGameOver && overlay.classList.contains('hidden') === false) {
-            startGame();
-        } else if (!isGameOver && player.grounded) {
-            player.dy = -player.jumpForce;
-            player.grounded = false;
+    function spawnObstacle() {
+        // Frequency increases as speed increases
+        let spawnChance = 0.015 + (gameSpeed * 0.001);
+        if (Math.random() < spawnChance) {
+            // Ensure minimum gap between obstacles
+            if (obstacles.length === 0 || obstacles[obstacles.length-1].x < 550) {
+                obstacles.push({
+                    x: 800,
+                    y: GROUND_Y - 30,
+                    w: 15,
+                    h: 30,
+                    color: "#ff0055"
+                });
+            }
         }
     }
 
-    function createObstacle() {
-        const height = 20 + Math.random() * 40;
-        obstacles.push({
-            x: canvas.width,
-            y: canvas.height - height - 20,
-            width: 25,
-            height: height,
-            color: '#ff0055'
-        });
-    }
-
-    function startGame() {
+    function resetGame() {
         score = 0;
         gameSpeed = 6;
         obstacles = [];
-        isGameOver = false;
-        player.y = 200;
+        player.y = 300;
         player.dy = 0;
-        overlay.classList.add('hidden');
-        update();
+        isGameRunning = true;
+        menu.classList.add('hidden');
+        gameLoop();
     }
 
     function gameOver() {
-        isGameOver = true;
-        cancelAnimationFrame(animationId);
-        
+        isGameRunning = false;
         if (score > highScore) {
             highScore = score;
-            localStorage.setItem('cyberHighscore', highScore);
-            highScoreEl.innerText = `BEST: ${highScore}`;
+            localStorage.setItem('cyberRunBest', highScore);
+            highScoreDisplay.innerText = `BEST: ${highScore}`;
         }
-
-        statusTitle.innerText = "CRASHED";
-        overlay.classList.remove('hidden');
+        mainTitle.innerText = "SYSTEM CRASH";
+        startBtn.innerText = "RETRY";
+        menu.classList.remove('hidden');
     }
 
-    function update() {
-        if (isGameOver) return;
+    function gameLoop() {
+        if (!isGameRunning) return;
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Draw Ground Grid Line
-        ctx.strokeStyle = '#333';
+        // Draw Ground
+        ctx.strokeStyle = "#333";
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(0, canvas.height - 20);
-        ctx.lineTo(canvas.width, canvas.height - 20);
+        ctx.moveTo(0, GROUND_Y);
+        ctx.lineTo(800, GROUND_Y);
         ctx.stroke();
 
         // Player Physics
         player.dy += player.gravity;
         player.y += player.dy;
 
-        if (player.y + player.height > canvas.height - 20) {
-            player.y = canvas.height - 20 - player.height;
+        if (player.y + 40 > GROUND_Y) {
+            player.y = GROUND_Y - 40;
             player.dy = 0;
-            player.grounded = true;
+            player.onGround = true;
         }
 
-        // Draw Player with a glow effect
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = player.color;
-        ctx.fillStyle = player.color;
-        ctx.fillRect(player.x, player.y, player.width, player.height);
-        ctx.shadowBlur = 0; // Reset glow for other elements
+        player.draw(frame);
 
-        // Obstacle Logic
-        if (Math.random() < 0.015 && (obstacles.length === 0 || obstacles[obstacles.length-1].x < canvas.width - 300)) {
-            createObstacle();
-        }
-
+        // Obstacles Logic
+        spawnObstacle();
         for (let i = obstacles.length - 1; i >= 0; i--) {
             let o = obstacles[i];
             o.x -= gameSpeed;
 
             // Draw Obstacle
             ctx.fillStyle = o.color;
-            ctx.fillRect(o.x, o.y, o.width, o.height);
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = o.color;
+            ctx.fillRect(o.x, o.y, o.w, o.h);
+            ctx.shadowBlur = 0;
 
             // Collision Detection
-            if (
-                player.x < o.x + o.width &&
-                player.x + player.width > o.x &&
-                player.y < o.y + o.height &&
-                player.y + player.height > o.y
-            ) {
+            if (player.x + 10 < o.x + o.w &&
+                player.x + 50 > o.x &&
+                player.y + 10 < o.y + o.h &&
+                player.y + 40 > o.y) {
                 gameOver();
             }
 
-            // Scoring and Removal
-            if (o.x + o.width < 0) {
+            // Remove and Score
+            if (o.x + o.w < 0) {
                 obstacles.splice(i, 1);
                 score++;
-                scoreEl.innerText = `SCORE: ${score.toString().padStart(3, '0')}`;
-                // Slowly increase difficulty
-                if (score % 5 === 0) gameSpeed += 0.1;
+                scoreDisplay.innerText = `SCORE: ${score}`;
+                
+                // Difficulty Spike: Speed up every 10 points
+                if (score > 0 && score % 10 === 0) {
+                    gameSpeed += 0.5;
+                    levelDisplay.innerText = `LEVEL: ${Math.floor(score/10) + 1}`;
+                }
             }
         }
 
-        animationId = requestAnimationFrame(update);
+        frame++;
+        requestAnimationFrame(gameLoop);
     }
+
+    // Controls
+    function handleInput() {
+        if (!isGameRunning && !menu.classList.contains('hidden')) {
+            // Button click is handled by onclick, but Space/Tap can also start
+            return; 
+        }
+        if (player.onGround) {
+            player.dy = player.jumpPower;
+            player.onGround = false;
+        }
+    }
+
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') {
+            if (!isGameRunning) resetGame();
+            else handleInput();
+        }
+    });
+
+    canvas.addEventListener('mousedown', handleInput);
+    startBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent duplicate trigger
+        resetGame();
+    });
+
 </script>
 </body>
 </html>
