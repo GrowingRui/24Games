@@ -31,19 +31,18 @@
             color: #555;
         }
 
-        /* Responsive Grid */
+        /* Responsive Grid - Updated to 5 columns */
         .game-board {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 10px;
-            width: 90vw;
-            max-width: 500px;
+            width: 95vw;
+            max-width: 600px;
             perspective: 1000px;
         }
 
-        @media (max-width: 400px) {
+        @media (max-width: 480px) {
             .game-board {
-                grid-template-columns: repeat(4, 1fr);
                 gap: 5px;
             }
         }
@@ -73,7 +72,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2rem;
+            font-size: 1.8rem;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
@@ -108,16 +107,16 @@
     <h1>Memory Match</h1>
     
     <div class="stats">
-        Moves: <span id="moves">0</span> | Matched: <span id="matches">0</span>/8
+        Moves: <span id="moves">0</span> | Matched: <span id="matches">0</span>/10
     </div>
 
-    <div class="game-board" id="board">
-        </div>
+    <div class="game-board" id="board"></div>
 
     <button onclick="resetGame()">Restart Game</button>
 
     <script>
-        const emojis = ['🍎', '🍌', '🍇', '🍉', '🍒', '🍓', '🍍', '🥝'];
+        // Updated to 10 pairs for a 5x4 grid
+        const emojis = ['🍎', '🍌', '🍇', '🍉', '🍒', '🍓', '🍍', '🥝', '🍋', '🍐'];
         let cards = [...emojis, ...emojis];
         let flippedCards = [];
         let matchedCount = 0;
@@ -128,13 +127,30 @@
         const movesDisplay = document.getElementById('moves');
         const matchesDisplay = document.getElementById('matches');
 
-        function shuffle(array) {
-            return array.sort(() => Math.random() - 0.5);
+        // Enhanced Shuffle: Ensures no identical cards are adjacent
+        function smartShuffle(array) {
+            let currentIndex = array.length, randomIndex;
+            
+            while (currentIndex != 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+
+            // Simple check: if adjacent items are same, swap one with a distant one
+            for (let i = 0; i < array.length - 1; i++) {
+                if (array[i] === array[i+1]) {
+                    let swapIdx = (i + 5) % array.length; 
+                    [array[i+1], array[swapIdx]] = [array[swapIdx], array[i+1]];
+                }
+            }
+            return array;
         }
 
         function createBoard() {
             board.innerHTML = '';
-            shuffle(cards).forEach((emoji, index) => {
+            const shuffledCards = smartShuffle([...cards]);
+            shuffledCards.forEach((emoji, index) => {
                 const card = document.createElement('div');
                 card.classList.add('card');
                 card.dataset.emoji = emoji;
