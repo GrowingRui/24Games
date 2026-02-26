@@ -10,7 +10,6 @@
             --card-back: #2e3131;
             --card-front: #ffffff;
             --accent-color: #4a90e2;
-            --match-color: #50c878;
         }
 
         body {
@@ -23,28 +22,22 @@
             min-height: 100vh;
         }
 
-        h1 { margin: 20px 0 10px; color: #333; }
+        h1 { margin: 20px 0 10px; color: #333; font-size: 1.8rem; }
 
         .stats {
-            margin-bottom: 20px;
-            font-size: 1.2rem;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
             color: #555;
         }
 
-        /* Responsive Grid - Updated to 5 columns */
+        /* 5x4 Layout: 4 Columns, 5 Rows */
         .game-board {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 10px;
-            width: 95vw;
-            max-width: 600px;
+            grid-template-columns: repeat(4, 1fr); /* 4 Columns */
+            gap: 8px;
+            width: 92vw;
+            max-width: 400px; /* Narrower for 4 columns */
             perspective: 1000px;
-        }
-
-        @media (max-width: 480px) {
-            .game-board {
-                gap: 5px;
-            }
         }
 
         .card {
@@ -88,18 +81,18 @@
         }
 
         button {
-            margin-top: 30px;
-            padding: 10px 25px;
+            margin: 25px 0;
+            padding: 12px 30px;
             font-size: 1rem;
             background-color: var(--accent-color);
             color: white;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            transition: opacity 0.3s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
 
-        button:hover { opacity: 0.8; }
+        button:hover { opacity: 0.9; }
     </style>
 </head>
 <body>
@@ -115,7 +108,6 @@
     <button onclick="resetGame()">Restart Game</button>
 
     <script>
-        // Updated to 10 pairs for a 5x4 grid
         const emojis = ['🍎', '🍌', '🍇', '🍉', '🍒', '🍓', '🍍', '🥝', '🍋', '🍐'];
         let cards = [...emojis, ...emojis];
         let flippedCards = [];
@@ -127,21 +119,20 @@
         const movesDisplay = document.getElementById('moves');
         const matchesDisplay = document.getElementById('matches');
 
-        // Enhanced Shuffle: Ensures no identical cards are adjacent
-        function smartShuffle(array) {
-            let currentIndex = array.length, randomIndex;
-            
-            while (currentIndex != 0) {
-                randomIndex = Math.floor(Math.random() * currentIndex);
-                currentIndex--;
-                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+        // Logic to push identical cards far apart
+        function customShuffle(array) {
+            // Standard shuffle first
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
             }
 
-            // Simple check: if adjacent items are same, swap one with a distant one
+            // Ensure pairs are not next to each other
             for (let i = 0; i < array.length - 1; i++) {
-                if (array[i] === array[i+1]) {
-                    let swapIdx = (i + 5) % array.length; 
-                    [array[i+1], array[swapIdx]] = [array[swapIdx], array[i+1]];
+                if (array[i] === array[i + 1]) {
+                    // Move the duplicate to the end or a far position
+                    let target = (i + 10) % array.length;
+                    [array[i + 1], array[target]] = [array[target], array[i + 1]];
                 }
             }
             return array;
@@ -149,8 +140,8 @@
 
         function createBoard() {
             board.innerHTML = '';
-            const shuffledCards = smartShuffle([...cards]);
-            shuffledCards.forEach((emoji, index) => {
+            const shuffledCards = customShuffle([...cards]);
+            shuffledCards.forEach((emoji) => {
                 const card = document.createElement('div');
                 card.classList.add('card');
                 card.dataset.emoji = emoji;
