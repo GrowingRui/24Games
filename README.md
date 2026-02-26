@@ -20,7 +20,11 @@ Please note: 📍 Location services need to be enabled for the app What2wear to 
 
 To access the game Spaceship please click here -> https://growingrui.github.io/brainstorming/Spaceship-adventure
 
-To access the game app CyberRun please click here -> 
+To access the game CyberRun please click here -> 
+
+To access the game Memory-Match-Challenge please click here -> https://growingrui.github.io/brainstorming/Memory-Match-Challenge
+
+
 
 ## About
 
