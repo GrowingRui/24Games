@@ -12,6 +12,16 @@
             --accent-color: #4a90e2;
         }
 
+        /* 修正这里，把 footer 样式应用到 class="footer" */
+        .footer {
+            position: fixed;
+            bottom: 8px;
+            left: 12px;
+            font-size: 11px;
+            color: #888;
+            opacity: 0.7;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg-color);
@@ -107,6 +117,10 @@
 
     <button onclick="resetGame()">Restart Game</button>
 
+    <div class="footer">
+        Author: XIA RUI DONG | Contact: xiarui091@gmail.com
+    </div>
+
     <script>
         const emojis = ['🍎', '🍌', '🍇', '🍉', '🍒', '🍓', '🍍', '🥝', '🍋', '🍐'];
         let cards = [...emojis, ...emojis];
@@ -119,18 +133,13 @@
         const movesDisplay = document.getElementById('moves');
         const matchesDisplay = document.getElementById('matches');
 
-        // Logic to push identical cards far apart
         function customShuffle(array) {
-            // Standard shuffle first
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [array[i], array[j]] = [array[j], array[i]];
             }
-
-            // Ensure pairs are not next to each other
             for (let i = 0; i < array.length - 1; i++) {
                 if (array[i] === array[i + 1]) {
-                    // Move the duplicate to the end or a far position
                     let target = (i + 10) % array.length;
                     [array[i + 1], array[target]] = [array[target], array[i + 1]];
                 }
