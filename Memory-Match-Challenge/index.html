@@ -12,7 +12,7 @@
             --accent-color: #4a90e2;
         }
 
-        /* 修正这里，把 footer 样式应用到 class="footer" */
+        /* footer 固定在左下角 + 响应式优化 */
         .footer {
             position: fixed;
             bottom: 8px;
@@ -20,6 +20,17 @@
             font-size: 11px;
             color: #888;
             opacity: 0.7;
+            max-width: 90%;      /* 防止在窄屏换行 */
+            word-wrap: break-word;
+            z-index: 1000;       /* 确保在最上层 */
+        }
+
+        @media (max-width: 500px) {
+            .footer {
+                font-size: 10px; /* 手机屏幕字体更小 */
+                bottom: 5px;
+                left: 5px;
+            }
         }
 
         body {
