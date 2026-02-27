@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maze OS Pro - v2.5</title>
+    <style>
+        body {
+            background: #1a1a1a;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        /* 菜单样式 */
+        #menu {
+            text-align: center;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 40px;
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            z-index: 20;
+        }
+
+        /* 游戏界面容器 */
+        #game-container {
+            display: none; /* 初始隐藏 */
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        canvas {
+            border: 2px solid #00ff00;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+            background: #000;
+        }
+
+        /* UI 元素 */
+        .btn-group { display: flex; gap: 20px; justify-content: center; }
+        
+        button {
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            background: transparent;
+            color: #00ff00;
+            border: 2px solid #00ff00;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background: #00ff00;
+            color: #000;
+            box-shadow: 0 0 15px #00ff00;
+        }
+
+        .back-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        .back-btn:hover { opacity: 1; }
+
+        .stats { margin-bottom: 10px; font-size: 1rem; width: 100%; display: flex; justify-content: space-between; }
+        
+        h1 { margin-bottom: 30px; letter-spacing: 5px; text-shadow: 0 0 10px #00ff00; }
+    </style>
+</head>
+<body>
+
+    <div id="menu">
+        <h1>MAZE OS v2.5</h1>
+        <div class="btn-group">
+            <button onclick="startGame('easy')">EASY MODE</button>
+            <button onclick="startGame('hard')">HARD MODE</button>
+        </div>
+        <p style="color: #444; margin-top: 20px;">SYSTEM STATUS: READY</p>
+    </div>
+
+    <div id="game-container">
+        <div class="stats">
+            <span>MODE: <span id="modeName"></span></span>
+            <span id="timer">RECORDING...</span>
+        </div>
+        
+        <canvas id="mazeCanvas"></canvas>
+        
+        <button class="back-btn" onclick="returnToMenu()">_QUIT_TO_MENU</button>
+    </div>
+
+    <script>
+        // --- Service Worker 日志助手 ---
+        function swLog(msg) {
+            console.log("SW Log:", msg);
+            if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                navigator.serviceWorker.controller.postMessage({
+                    type: 'GAME_LOG',
+                    message: msg,
+                    timestamp: new Date().toLocaleTimeString()
+                });
+            }
+        }
+
+        const canvas = document.getElementById('mazeCanvas');
+        const ctx = canvas.getContext('2d');
+        const menu = document.getElementById('menu');
+        const gameContainer = document.getElementById('game-container');
+        
+        const cols = 40; 
+        const rows = 40;
+        let size; // 动态计算
+        let cellSize;
+
+        let grid = [];
+        let stack = [];
+        let player = { x: 0, y: 0 };
+        let gameMode = 'easy';
+        let isGameRunning = false;
+
+        class Cell {
+            constructor(r, c) {
+                this.r = r;
+                this.c = c;
+                this.walls = [true, true, true, true]; 
+                this.visited = false;
+            }
+        }
+
+        function startGame(mode) {
+            gameMode = mode;
+            swLog(`Session Started: ${mode}`);
+            
+            // 每次开始都重新计算尺寸，防止浏览器窗口缩放导致的显示问题
+            size = Math.min(window.innerHeight * 0.7, window.innerWidth * 0.9);
+            cellSize = size / cols;
+            canvas.width = size;
+            canvas.height = size;
+
+            // 关键：切换 UI 并触发生成新迷宫
+            menu.style.display = 'none';
+            gameContainer.style.display = 'flex';
+            document.getElementById('modeName').innerText = mode.toUpperCase();
+            
+            resetAndGenerate(); 
+            isGameRunning = true;
+        }
+
+        function returnToMenu() {
+            swLog("Player exited to menu");
+            isGameRunning = false;
+            gameContainer.style.display = 'none';
+            menu.style.display = 'block';
+        }
+
+        function resetAndGenerate() {
+            // 初始化数据
+            grid = [];
+            stack = [];
+            player = { x: 0, y: 0 };
+            
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    grid.push(new Cell(r, c));
+                }
+            }
+            
+            // 算法开始
+            recursiveGenerate(grid[0]);
+            draw();
+        }
+
+        function recursiveGenerate(current) {
+            current.visited = true;
+            let neighbors = getNeighbors(current);
+            
+            while (neighbors.length > 0) {
+                let next = neighbors[Math.floor(Math.random() * neighbors.length)];
+                stack.push(current);
+                removeWalls(current, next);
+                recursiveGenerate(next);
+                neighbors = getNeighbors(current);
+            }
+        }
+
+        function getNeighbors(cell) {
+            let neighbors = [];
+            let idx = (r, c) => (r < 0 || c < 0 || r >= rows || c >= cols) ? -1 : c + r * cols;
+            
+            [[cell.r-1, cell.c], [cell.r, cell.c+1], [cell.r+1, cell.c], [cell.r, cell.c-1]].forEach(n => {
+                let found = grid[idx(n[0], n[1])];
+                if (found && !found.visited) neighbors.push(found);
+            });
+            return neighbors;
+        }
+
+        function removeWalls(a, b) {
+            if (a.r > b.r) { a.walls[0] = false; b.walls[2] = false; }
+            else if (a.r < b.r) { a.walls[2] = false; b.walls[0] = false; }
+            if (a.c < b.c) { a.walls[1] = false; b.walls[3] = false; }
+            else if (a.c > b.c) { a.walls[3] = false; b.walls[1] = false; }
+        }
+
+        function draw() {
+            if(!isGameRunning && gameContainer.style.display === 'none') return;
+
+            ctx.fillStyle = "#000";
+            ctx.fillRect(0, 0, size, size);
+
+            for (let cell of grid) {
+                let x = cell.c * cellSize;
+                let y = cell.r * cellSize;
+
+                let isVisible = (gameMode === 'easy');
+                if (!isVisible) {
+                    let dist = Math.hypot(cell.c - player.x, cell.r - player.y);
+                    if (dist < 4) isVisible = true; // 视野范围
+                }
+
+                if (isVisible) {
+                    ctx.strokeStyle = "#00ff00";
+                    ctx.lineWidth = 1;
+                    if (cell.walls[0]) ctx.beginPath(), ctx.moveTo(x,y), ctx.lineTo(x+cellSize,y), ctx.stroke();
+                    if (cell.walls[1]) ctx.beginPath(), ctx.moveTo(x+cellSize,y), ctx.lineTo(x+cellSize,y+cellSize), ctx.stroke();
+                    if (cell.walls[2]) ctx.beginPath(), ctx.moveTo(x,y+cellSize), ctx.lineTo(x+cellSize,y+cellSize), ctx.stroke();
+                    if (cell.walls[3]) ctx.beginPath(), ctx.moveTo(x,y), ctx.lineTo(x,y+cellSize), ctx.stroke();
+                    
+                    // 终点
+                    if (cell.r === rows-1 && cell.c === cols-1) {
+                        ctx.fillStyle = "rgba(255, 0, 0, 0.8)";
+                        ctx.fillRect(x + 2, y + 2, cellSize - 4, cellSize - 4);
+                    }
+                }
+            }
+
+            // 绘制玩家 (白点)
+            ctx.fillStyle = "#fff";
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = "#fff";
+            ctx.fillRect(player.x * cellSize + 2, player.y * cellSize + 2, cellSize - 4, cellSize - 4);
+            ctx.shadowBlur = 0;
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (!isGameRunning) return;
+            
+            let currentCell = grid[player.y * cols + player.x];
+            let moved = false;
+
+            if (e.key === "ArrowUp" && !currentCell.walls[0]) { player.y--; moved = true; }
+            if (e.key === "ArrowRight" && !currentCell.walls[1]) { player.x++; moved = true; }
+            if (e.key === "ArrowDown" && !currentCell.walls[2]) { player.y++; moved = true; }
+            if (e.key === "ArrowLeft" && !currentCell.walls[3]) { player.x--; moved = true; }
+
+            if (moved) {
+                draw();
+                if (player.x === cols - 1 && player.y === rows - 1) {
+                    swLog("Maze solved!");
+                    isGameRunning = false;
+                    setTimeout(() => {
+                        alert("CORE ACCESSED. SYSTEM BREACH SUCCESSFUL.");
+                        returnToMenu();
+                    }, 100);
+                }
+            }
+        });
+
+        // 初始化注册
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
+</body>
+</html>
