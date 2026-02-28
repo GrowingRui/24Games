@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bloxorz: Guaranteed Solvable</title>
+    <style>
+        body { background: #1a1a1a; color: #fff; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; }
+        #ui-layer { position: absolute; top: 20px; text-align: center; pointer-events: none; }
+        h1 { margin: 0; font-size: 24px; color: #3498db; text-shadow: 2px 2px #000; }
+        .info { color: #888; font-size: 14px; }
+        canvas { background: #000; box-shadow: 0 0 40px rgba(0,0,0,0.5); border: 2px solid #333; }
+        #message { position: absolute; bottom: 50px; font-size: 20px; font-weight: bold; transition: all 0.3s; }
+    </style>
+</head>
+<body>
+
+    <div id="ui-layer">
+        <h1>PRECISION ROLLER</h1>
+        <div class="info">Guaranteed Path Algorithm Active</div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+    <div id="message"></div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const msgDiv = document.getElementById('message');
+
+        const TILE_SIZE = 35;
+        const COLS = 20;
+        const ROWS = 12;
+        
+        let map = [];
+        let block = {};
+        let target = {x: 0, y: 0};
+        let gameOver = false;
+
+        function generateSolvableMap() {
+            // 1. 初始化全黑地图
+            map = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+            
+            // 2. 随机设定终点
+            target.x = Math.floor(Math.random() * (COLS - 6)) + 3;
+            target.y = Math.floor(Math.random() * (ROWS - 6)) + 3;
+            map[target.y][target.x] = 2;
+
+            // 3. 从终点开始反向翻滚模拟
+            let cur = { x1: target.x, y1: target.y, x2: target.x, y2: target.y, state: 'standing' };
+            let steps = 0;
+            const maxSteps = 45; // 模拟翻滚次数
+
+            while (steps < maxSteps) {
+                // 标记当前位置为地板
+                map[cur.y1][cur.x1] = (map[cur.y1][cur.x1] === 2) ? 2 : 1;
+                if (cur.state !== 'standing') {
+                    map[cur.y2][cur.x2] = 1;
+                }
+
+                // 随机选择一个方向进行反向翻滚
+                const dirs = ['up', 'down', 'left', 'right'];
+                const dir = dirs[Math.floor(Math.random() * 4)];
+                let next = simulateMove(cur, dir);
+
+                // 边界检查：确保反向翻滚不会滚出地图边缘
+                if (next.x1 >= 1 && next.x1 < COLS-1 && next.y1 >= 1 && next.y1 < ROWS-1 &&
+                    next.x2 >= 1 && next.x2 < COLS-1 && next.y2 >= 1 && next.y2 < ROWS-1) {
+                    cur = next;
+                    steps++;
+                }
+            }
+
+            // 4. 将最后的位置设为玩家起点
+            block = {
+                x: cur.x1, y: cur.y1,
+                x2: cur.x2, y2: cur.y2,
+                state: cur.state
+            };
+
+            // 5. 额外增加一些随机地板，增加迷惑性
+            for(let i=0; i<40; i++) {
+                let rx = Math.floor(Math.random()*COLS);
+                let ry = Math.floor(Math.random()*ROWS);
+                if(map[ry][rx] === 0) map[ry][rx] = 1;
+            }
+        }
+
+        // 核心物理模拟逻辑（用于生成和移动）
+        function simulateMove(b, dir) {
+            let res = JSON.parse(JSON.stringify(b));
+            if (res.state === 'standing') {
+                if (dir === 'left') { res.x1 -= 2; res.x2 = res.x1 + 1; res.y2 = res.y1; res.state = 'lying_h'; }
+                else if (dir === 'right') { res.x1 += 1; res.x2 = res.x1 + 1; res.y2 = res.y1; res.state = 'lying_h'; }
+                else if (dir === 'up') { res.y1 -= 2; res.y2 = res.y1 + 1; res.x2 = res.x1; res.state = 'lying_v'; }
+                else if (dir === 'down') { res.y1 += 1; res.y2 = res.y1 + 1; res.x2 = res.x1; res.state = 'lying_v'; }
+            } else if (res.state === 'lying_h') {
+                if (dir === 'left') { res.x1 -= 1; res.x2 = res.x1; res.state = 'standing'; }
+                else if (dir === 'right') { res.x1 += 2; res.x2 = res.x1; res.state = 'standing'; }
+                else if (dir === 'up') { res.y1 -= 1; res.y2 -= 1; }
+                else if (dir === 'down') { res.y1 += 1; res.y2 += 1; }
+            } else if (res.state === 'lying_v') {
+                if (dir === 'left') { res.x1 -= 1; res.x2 -= 1; }
+                else if (dir === 'right') { res.x1 += 1; res.x2 += 1; }
+                else if (dir === 'up') { res.y1 -= 1; res.y2 = res.y1; res.state = 'standing'; }
+                else if (dir === 'down') { res.y1 += 2; res.y2 = res.y1; res.state = 'standing'; }
+            }
+            return res;
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const ox = (canvas.width - COLS * TILE_SIZE) / 2;
+            const oy = (canvas.height - ROWS * TILE_SIZE) / 2;
+
+            for(let y=0; y<ROWS; y++) {
+                for(let x=0; x<COLS; x++) {
+                    if (map[y][x] === 0) continue;
+                    ctx.fillStyle = (map[y][x] === 2) ? '#e74c3c' : '#34495e';
+                    ctx.fillRect(x*TILE_SIZE + ox, y*TILE_SIZE + oy, TILE_SIZE-2, TILE_SIZE-2);
+                }
+            }
+
+            if (!gameOver) {
+                ctx.fillStyle = '#f1c40f';
+                ctx.fillRect(block.x * TILE_SIZE + ox + 4, block.y * TILE_SIZE + oy + 4, TILE_SIZE-10, TILE_SIZE-10);
+                if (block.state !== 'standing') {
+                    ctx.fillRect(block.x2 * TILE_SIZE + ox + 4, block.y2 * TILE_SIZE + oy + 4, TILE_SIZE-10, TILE_SIZE-10);
+                }
+            }
+        }
+
+        function check() {
+            const out = (x,y) => x<0 || x>=COLS || y<0 || y>=ROWS || map[y][x]===0;
+            if (out(block.x, block.y) || (block.state!=='standing' && out(block.x2, block.y2))) {
+                endGame("FELL INTO ABYSS!", "#e74c3c");
+            } else if (block.state==='standing' && map[block.y][block.x]===2) {
+                endGame("PERFECT! LEVEL CLEARED", "#2ecc71");
+            }
+        }
+
+        function endGame(m, color) {
+            gameOver = true;
+            msgDiv.textContent = m;
+            msgDiv.style.color = color;
+            setTimeout(() => {
+                msgDiv.textContent = "";
+                start();
+            }, 1500);
+        }
+
+        function start() {
+            gameOver = false;
+            generateSolvableMap();
+            draw();
+        }
+
+        window.addEventListener('keydown', e => {
+            if (gameOver) return;
+            const dMap = { ArrowLeft:'left', ArrowRight:'right', ArrowUp:'up', ArrowDown:'down' };
+            if (dMap[e.key]) {
+                block = simulateMove({x1:block.x, y1:block.y, x2:block.x2, y2:block.y2, state:block.state}, dMap[e.key]);
+                // Sync internal structure
+                block.x = block.x1; block.y = block.y1;
+                check();
+                draw();
+            }
+            if (e.key.toLowerCase() === 'r') start();
+        });
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        start();
+    </script>
+</body>
+</html>
