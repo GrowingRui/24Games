@@ -24,6 +24,8 @@ To access the game CyberRun please click here ->
 
 To access the game Memory-Match-Challenge please click here -> https://growingrui.github.io/brainstorming/Memory-Match-Challenge
 
+To access the game Maze please click here -> https://growingrui.github.io/brainstorming/Shadow-Maze
+
 
 
 ## About
